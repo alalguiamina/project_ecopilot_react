@@ -35,21 +35,21 @@ function App() {
 
   const loginMutation = useAuthToken();
 
-  const currentUserQuery = useGetCurrentUser({ enabled: false });
+  const { data: currentUser, refetch } = useGetCurrentUser({ enabled: false });
 
   // when current-user query returns, store it in App state
   useEffect(() => {
-    if (currentUserQuery.data) {
-      setUser(currentUserQuery.data);
+    if (currentUser) {
+      setUser(currentUser);
     }
-  }, [currentUserQuery.data]);
+  }, [currentUser]);
 
   // on startup, if token exists try to load user
   useEffect(() => {
     const token =
       localStorage.getItem(ACCESS_TOKEN) ?? localStorage.getItem("authToken");
     if (token) {
-      currentUserQuery.refetch().catch(() => setUser(null));
+      refetch().catch(() => setUser(null));
     }
   }, []); // run once
 
@@ -82,7 +82,7 @@ function App() {
         // no return value: keep signature Promise<void>
       } else {
         // fallback: try react-query refetch
-        const userRes = await currentUserQuery.refetch();
+        const userRes = await refetch();
         if (userRes.data) {
           setUser(userRes.data);
           (window as any).__CURRENT_USER__ = userRes.data;
@@ -176,7 +176,7 @@ function App() {
               }
             />
             {/* fallback: send unknown routes to root */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
       </div>

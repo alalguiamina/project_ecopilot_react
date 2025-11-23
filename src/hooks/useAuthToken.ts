@@ -40,6 +40,7 @@ export const useAuthToken = () => {
           `Auth failed (${resp.status})`;
         throw new Error(msg);
       }
+      console.log("@@", resp.data);
 
       return resp.data;
     },

@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./Sidebar.css";
 import dashboardIcon from "../../Assets/dashboard.png";
 import penIcon from "../../Assets/pen.png";
@@ -10,19 +10,10 @@ import reportIcon from "../../Assets/report.png";
 import settingsIcon from "../../Assets/settings.png";
 import organisationIcon from "../../Assets/organisation.png";
 import logo from "../../Assets/logo.png";
-import type { User as BackendUser } from "../../types/user";
-
-// minimal, tolerant user shape used by Sidebar so pages can pass their app User
-interface SidebarUser {
-  role?: string;
-  username?: string;
-  first_name?: string;
-  id?: number;
-  sites?: number[];
-}
+import type { User } from "../../App";
 
 interface SidebarProps {
-  user?: SidebarUser | null;
+  user?: User | null;
 }
 
 type MenuItem = {
@@ -30,10 +21,11 @@ type MenuItem = {
   label: string;
   icon: string;
   color: string;
-  path?: string; // now optional
-  children?: MenuItem[]; // add sub-items
+  path?: string;
+  children?: MenuItem[];
   adminOnly?: boolean;
 };
+
 const Sidebar = ({ user }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,13 +38,27 @@ const Sidebar = ({ user }: SidebarProps) => {
       color: "#3b82f6",
       path: "/dashboard",
     },
-    // Parent "Saisie de données"
     {
       id: "data-entry",
       label: "Saisie de données",
       icon: penIcon,
       color: "#16a34a",
-      path: "/data-entry",
+      children: [
+        {
+          id: "canevas",
+          label: "Canevas de Saisie",
+          icon: penIcon,
+          color: "#16a34a",
+          path: "/data-entry/canevas",
+        },
+        {
+          id: "validation",
+          label: "Validation de Données",
+          icon: penIcon,
+          color: "#555",
+          path: "/data-entry/validation",
+        },
+      ],
     },
     {
       id: "carbon",
@@ -90,7 +96,6 @@ const Sidebar = ({ user }: SidebarProps) => {
       path: "/organisation",
       adminOnly: true,
     },
-
     {
       id: "settings",
       label: "Paramètres",
@@ -100,30 +105,20 @@ const Sidebar = ({ user }: SidebarProps) => {
     },
   ];
 
-  // Détermine la page active selon l'URL
-  const isActive = (path?: string) =>
-    path ? location.pathname === path : false;
-
-  // normalize role for checks (tolerant to different shapes / capitalizations)
-  const userRole = (user?.role || "").toString().toLowerCase().trim();
-
-  // Accept common admin role variants
-  const adminRoles = new Set([
-    "admin",
-    "super_user",
-    "superuser",
-    "user",
-    "agent",
-  ]);
-  const isAdmin = adminRoles.has(userRole);
+  // normalize user role for checks
+  const userRole = (user?.role ?? "").toString().toLowerCase().trim();
+  const isAdmin =
+    userRole === "admin" ||
+    userRole === "super_user" ||
+    userRole === "administrator";
 
   // Filter menu items based on user role
   const filteredMenuItems = menuItems.filter(
     (item) => !item.adminOnly || isAdmin,
   );
 
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "sidebar-link active" : "sidebar-link";
+  // determine active path (safe for optional path)
+  const isActive = (path?: string) => !!path && location.pathname === path;
 
   return (
     <aside className="sidebar">
@@ -133,32 +128,67 @@ const Sidebar = ({ user }: SidebarProps) => {
 
       <nav className="sidebar-nav">
         {filteredMenuItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => item.path && navigate(item.path)}
-            className={`sidebar-item ${isActive(item.path) ? "active" : ""}`}
-            style={
-              isActive(item.path)
-                ? {
-                    backgroundColor: `${item.color}15`,
-                    color: item.color,
+          <div key={item.id}>
+            <button
+              onClick={() => item.path && navigate(item.path)}
+              className={`sidebar-item ${isActive(item.path) ? "active" : ""}`}
+              style={
+                isActive(item.path)
+                  ? {
+                      backgroundColor: `${item.color}15`,
+                      color: item.color,
+                    }
+                  : {}
+              }
+            >
+              <img
+                src={item.icon}
+                alt={item.label}
+                className="sidebar-icon"
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  objectFit: "contain",
+                  marginRight: "8px",
+                }}
+              />
+              <span className="sidebar-label">{item.label}</span>
+            </button>
+
+            {/* render children if any */}
+            {item.children &&
+              item.children.map((child) => (
+                <button
+                  key={child.id}
+                  onClick={() => child.path && navigate(child.path)}
+                  className={`sidebar-item sidebar-child ${
+                    isActive(child.path) ? "active" : ""
+                  }`}
+                  style={
+                    isActive(child.path)
+                      ? {
+                          backgroundColor: `${child.color}10`,
+                          color: child.color,
+                          marginLeft: 20,
+                        }
+                      : { marginLeft: 20 }
                   }
-                : {}
-            }
-          >
-            <img
-              src={item.icon}
-              alt={item.label}
-              className="sidebar-icon"
-              style={{
-                width: "24px",
-                height: "24px",
-                objectFit: "contain",
-                marginRight: "8px",
-              }}
-            />
-            <span className="sidebar-label">{item.label}</span>
-          </button>
+                >
+                  <img
+                    src={child.icon}
+                    alt={child.label}
+                    className="sidebar-icon"
+                    style={{
+                      width: "20px",
+                      height: "20px",
+                      objectFit: "contain",
+                      marginRight: "8px",
+                    }}
+                  />
+                  <span className="sidebar-label">{child.label}</span>
+                </button>
+              ))}
+          </div>
         ))}
       </nav>
     </aside>

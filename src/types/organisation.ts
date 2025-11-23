@@ -32,6 +32,8 @@ export interface NewUser {
   lastName: string;
   email: string;
   password: string;
-  site: string;
+  // allow site to be number (id) or string (name) in UI; include optional sites array to match backend payload
+  site?: number | string;
+  sites?: Array<number | string>;
   role: string;
 }

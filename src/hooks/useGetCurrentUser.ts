@@ -21,10 +21,12 @@ export const useGetCurrentUser = (opts?: { enabled?: boolean }) =>
       if (resp.error || !resp.data) {
         throw resp.error || new Error("Failed to fetch current user");
       }
+      console.log("@11", resp.data);
       return resp.data;
     },
     staleTime: 5 * 60 * 1000,
     enabled: opts?.enabled ?? true,
+    retry: 1,
   });
 
 export default useGetCurrentUser;

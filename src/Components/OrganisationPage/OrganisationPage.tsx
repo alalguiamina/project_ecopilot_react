@@ -122,9 +122,15 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
     }
   };
 
-  // Helpers to map site name <-> id
-  const siteNameToId = (name: string) =>
-    sites.find((s) => s.name === name)?.id ?? 0;
+  // Helpers to map site name/id <-> id/name
+  // Accept either a site name (string) or an id (number) as input.
+  const siteNameToId = (input?: string | number) => {
+    if (typeof input === "number" && input > 0) return input;
+    if (!input) return 0;
+    const name = String(input);
+    return sites.find((s) => s.name === name)?.id ?? 0;
+  };
+
   const siteIdToName = (id?: number) =>
     sites.find((s) => s.id === id)?.name ?? "";
 
@@ -419,7 +425,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
                 setExpandedPanel as (panel: string | null) => void
               }
             >
-              whe
               <div className="single-panel">
                 {(() => {
                   const cfg = entityConfigs.find(

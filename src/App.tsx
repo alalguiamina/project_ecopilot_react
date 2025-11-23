@@ -71,17 +71,7 @@ function App() {
       if (refresh) {
         localStorage.setItem("refreshToken", refresh);
         localStorage.setItem(REFRESH_TOKEN ?? "REFRESH_TOKEN", refresh);
-      }
 
-      // fetch profile directly and set App state (ensures role present)
-      const profileResp = await fetchClient<BackendUser>("/user/users/me/");
-      if (profileResp.data) {
-        setUser(profileResp.data);
-        // optional global debug
-        (window as any).__CURRENT_USER__ = profileResp.data;
-        // no return value: keep signature Promise<void>
-      } else {
-        // fallback: try react-query refetch
         const userRes = await refetch();
         if (userRes.data) {
           setUser(userRes.data);

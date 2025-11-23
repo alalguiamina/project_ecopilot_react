@@ -94,7 +94,7 @@ export async function fetchClient<T>(
           : options.body
             ? JSON.stringify(options.body)
             : undefined,
-      credentials: options.credentials,
+      credentials: "include",
     });
 
   try {

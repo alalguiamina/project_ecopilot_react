@@ -32,12 +32,47 @@ export type User = BackendUser;
 
 function App() {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState<BackendUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [initializing, setInitializing] = useState(true);
 
   const loginMutation = useAuthToken();
+  const { refetch } = useGetCurrentUser({ enabled: false });
 
-  const { data: currentUser, refetch } = useGetCurrentUser({ enabled: false });
+  // on startup, force user to login (no auto-login)
+  const { data: currentUser } = useGetCurrentUser({ enabled: false }); // Fetch current user data
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        console.log(
+          "[App] startup - clearing any existing tokens to force login",
+        );
+        // Always clear tokens on startup to force fresh login
+        [
+          "authToken",
+          "ACCESS_TOKEN",
+          "access_token",
+          "auth_token",
+          "refreshToken",
+          "REFRESH_TOKEN",
+          "refresh_token",
+        ].forEach((k) => localStorage.removeItem(k));
+
+        // Clear session storage flags
+        sessionStorage.removeItem("loggedOut");
+
+        // Always start with no user to force login
+        setUser(null);
+        (window as any).__CURRENT_USER__ = null;
+      } catch (error) {
+        console.warn("[App] startup clear failed:", error);
+        setUser(null);
+      } finally {
+        setInitializing(false);
+      }
+    };
+
+    initializeAuth();
+  }, []); // run once on mount
 
   // when current-user query returns, store it in App state
   useEffect(() => {
@@ -45,31 +80,6 @@ function App() {
       setUser(currentUser);
     }
   }, [currentUser]);
-
-  // on startup, if token exists try to load user
-  useEffect(() => {
-    (async () => {
-      const wasLoggedOut = sessionStorage.getItem("loggedOut") === "1";
-      const token =
-        localStorage.getItem("authToken") ??
-        localStorage.getItem("ACCESS_TOKEN");
-      if (!token || wasLoggedOut) {
-        // clear flag so next startup tries auth normally
-        sessionStorage.removeItem("loggedOut");
-        setUser(null);
-        setInitializing(false);
-        return;
-      }
-      // proceed to refetch current user...
-      try {
-        await refetch();
-      } catch {
-        setUser(null);
-      } finally {
-        setInitializing(false);
-      }
-    })();
-  }, []); // run once
 
   const handleLogin = async (
     username: string,

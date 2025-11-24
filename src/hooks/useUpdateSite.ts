@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchClient } from "../API/fetchClient";
-import type { UpdateSiteRequest, Site } from "../types/site";
+import type { Site } from "../types/site";
 
-interface UpdateSiteParams {
-  siteId: number;
-  siteData: UpdateSiteRequest;
+export interface UpdateSiteRequest {
+  name?: string;
+  require_double_validation?: boolean;
+  config_json?: Record<string, any>;
 }
 
 export const useUpdateSite = () => {
@@ -12,23 +13,31 @@ export const useUpdateSite = () => {
 
   return useMutation({
     mutationFn: async ({
-      siteId,
-      siteData,
-    }: UpdateSiteParams): Promise<Site> => {
-      const response = await fetchClient<Site>(`/user/sites/${siteId}/`, {
+      id,
+      data,
+    }: {
+      id: number;
+      data: UpdateSiteRequest;
+    }): Promise<Site> => {
+      const resp = await fetchClient<Site>(`/user/sites/${id}/`, {
         method: "PATCH",
-        body: siteData,
+        body: data,
       });
 
-      if (response.error || !response.data) {
-        throw response.error || new Error("Failed to update site");
+      if (resp.error || !resp.data) {
+        const msg =
+          resp.error?.detail ??
+          resp.error?.message ??
+          JSON.stringify(resp.error) ??
+          `Update failed (${resp.status})`;
+        throw new Error(msg);
       }
 
-      return response.data;
+      return resp.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
+      // invalidate sites query to refresh the list
       queryClient.invalidateQueries({ queryKey: ["sites"] });
-      queryClient.invalidateQueries({ queryKey: ["site", data.id] });
     },
   });
 };

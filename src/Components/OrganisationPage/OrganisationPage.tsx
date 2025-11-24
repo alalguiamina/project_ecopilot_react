@@ -4,6 +4,7 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 import UserManager from "../UserManager";
 import AddUserDialog from "../AddUserDialog";
 import EditUserDialog from "../EditUserDialog";
+import EditSiteDialog from "../EditSiteDialog";
 import {
   useGetUsers,
   useCreateUser,
@@ -12,6 +13,8 @@ import {
   useGetSites,
   useCreateSite,
 } from "../../hooks";
+import { useUpdateSite } from "../../hooks/useUpdateSite";
+import type { UpdateSiteRequest } from "../../hooks/useUpdateSite";
 import type {
   Site,
   SiteGroup,
@@ -58,6 +61,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   const { data: sites = [] } = useGetSites();
   const { data: siteGroups = [] } = useGetSites(); // kept if you still need groups
   const createSite = useCreateSite();
+  const updateSite = useUpdateSite();
   // keep deleteSiteGroup if you still delete groups elsewhere
   const deleteSiteGroup = useDeleteSite();
 
@@ -81,6 +85,8 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditSiteDialogOpen, setIsEditSiteDialogOpen] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
   // UI user form state (for Add)
   const [newUser, setNewUser] = useState<NewUser>({
@@ -327,6 +333,23 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
     },
   ];
 
+  const handleEditSite = (site: Site) => {
+    setSelectedSite(site);
+    setIsEditSiteDialogOpen(true);
+  };
+
+  const handleUpdateSite = async (id: number, data: UpdateSiteRequest) => {
+    try {
+      await updateSite.mutateAsync({ id, data });
+      setIsEditSiteDialogOpen(false);
+      setSelectedSite(null);
+      console.log("Site updated successfully");
+    } catch (error) {
+      console.error("Failed to update site:", error);
+      alert("Failed to update site");
+    }
+  };
+
   return (
     <div className="dashboard-wrapper">
       <Sidebar user={currentUser} />
@@ -338,27 +361,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
             <div className="page-header">
               <p>Gestion des unités organisationnelles et des utilisateurs</p>
             </div>
-
-            {/* Score cards */}
-            {/*<div className="score-cards-grid">
-              <div className="score-card">
-                <div className="score-card-header">
-                  <span className="score-label">Sites</span>
-                  <span className="score-icon">📍</span>
-                </div>
-                <div className="score-value blue">{sites.length}</div>
-                <p className="score-change">Actifs</p>
-              </div>
-
-              <div className="score-card">
-                <div className="score-card-header">
-                  <span className="score-label">Utilisateurs</span>
-                  <span className="score-icon">👤</span>
-                </div>
-                <div className="score-value orange">{users.length}</div>
-                <p className="score-change">Actifs</p>
-              </div>
-            </div>*/}
 
             {/* User Management Panel */}
             <ExpandablePanel
@@ -426,74 +428,72 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
               }
             >
               <div className="single-panel">
-                {(() => {
-                  const cfg = entityConfigs.find(
-                    (c) => c.id === "site-groups",
-                  )!;
+                <EntityManager
+                  title="Sites"
+                  fields={[
+                    {
+                      key: "name" as any,
+                      label: "Nom",
+                      placeholder: "Nom du site",
+                    },
+                    {
+                      key: "location" as any,
+                      label: "Localisation",
+                      placeholder: "Localisation",
+                    },
+                    {
+                      key: "require_double_validation" as any,
+                      label: "Double Validation",
+                      placeholder: "true/false",
+                    },
+                  ]}
+                  data={sites as any}
+                  onEdit={handleEditSite}
+                  onDelete={(site: any) => {
+                    alert(
+                      `Delete site ${site.name} not implemented — implement useDeleteSite and wire it.`,
+                    );
+                  }}
+                  extraActionButton={
+                    <button
+                      className="btn-primary"
+                      onClick={() => setIsAddGroupOpen(true)}
+                    >
+                      <Plus className="w-4 h-4 mr-2" /> Ajouter
+                    </button>
+                  }
+                  formatField={(k: any, v: any) =>
+                    k === ("require_double_validation" as any)
+                      ? v
+                        ? "Oui"
+                        : "Non"
+                      : k === ("location" as any)
+                        ? String(v || "")
+                        : String(v)
+                  }
+                />
 
-                  return (
-                    <>
-                      <EntityManager
-                        title="Sites (backend)"
-                        fields={[
-                          {
-                            key: "name" as any,
-                            label: "Nom",
-                            placeholder: "Nom du site",
-                          },
-                          {
-                            key: "location" as any,
-                            label: "Localisation",
-                            placeholder: "Localisation",
-                          },
-                          {
-                            key: "require_double_validation" as any,
-                            label: "Double Validation",
-                            placeholder: "true/false",
-                          },
-                        ]}
-                        items={sites as any}
-                        newItem={newGroup as any}
-                        setNewItem={(item: any) => setNewGroup(item)}
-                        onAdd={handleAddGroup}
-                        onDelete={(id: number) => {
-                          // optional: implement delete site hook and call it here
-                          alert(
-                            "Delete site not implemented — implement useDeleteSite and wire it.",
-                          );
-                        }}
-                        extraActionButton={
-                          <button
-                            className="btn-primary"
-                            onClick={() => setIsAddGroupOpen(true)}
-                          >
-                            <Plus className="w-4 h-4 mr-2" /> Ajouter
-                          </button>
-                        }
-                        formatField={(k, v) =>
-                          k === ("require_double_validation" as any)
-                            ? v
-                              ? "Oui"
-                              : "Non"
-                            : k === ("location" as any)
-                              ? String(v || "")
-                              : String(v)
-                        }
-                      />
+                {/* Edit Site Dialog */}
+                <EditSiteDialog
+                  isOpen={isEditSiteDialogOpen}
+                  site={selectedSite}
+                  onSave={handleUpdateSite}
+                  onClose={() => {
+                    setIsEditSiteDialogOpen(false);
+                    setSelectedSite(null);
+                  }}
+                />
 
-                      {isAddGroupOpen && (
-                        <AddSiteGroupDialog
-                          isOpen={isAddGroupOpen}
-                          newGroup={newGroup}
-                          setNewGroup={setNewGroup}
-                          people={uiUsers}
-                          onAddGroup={handleAddGroup}
-                          onClose={() => setIsAddGroupOpen(false)}
-                        />
-                      )}
-                    </>
-                  );
-                })()}
+                {isAddGroupOpen && (
+                  <AddSiteGroupDialog
+                    isOpen={isAddGroupOpen}
+                    newGroup={newGroup}
+                    setNewGroup={setNewGroup}
+                    people={uiUsers}
+                    onAddGroup={handleAddGroup}
+                    onClose={() => setIsAddGroupOpen(false)}
+                  />
+                )}
               </div>
             </ExpandablePanel>
           </div>

@@ -11,29 +11,29 @@ interface FieldConfig<T> {
 
 interface EntityManagerProps<T> {
   title: string;
+  data: T[];
   fields: FieldConfig<T>[];
-  items: T[];
-  newItem: T;
-  setNewItem: (item: T) => void;
-  onAdd: () => void;
-  onDelete: (id: number) => void;
-  extraActionButton?: React.ReactNode;
+  onAdd?: () => void;
+  onEdit?: (item: T) => void;
+  onDelete?: (item: T) => void;
+  searchPlaceholder?: string;
   formatField?: (key: keyof T, value: any) => string;
+  extraActionButton?: React.ReactNode;
 }
 
-export function EntityManager<T extends { id?: number }>({
+export function EntityManager<T extends { id: number | string }>({
   title,
+  data,
   fields,
-  items,
-  newItem,
-  setNewItem,
   onAdd,
+  onEdit,
   onDelete,
-  extraActionButton,
+  searchPlaceholder = `Search ${title.toLowerCase()}...`,
   formatField,
+  extraActionButton,
 }: EntityManagerProps<T>) {
   return (
-    <div className="tab-content">
+    <div className="entity-manager">
       <div className="panel-header-row">
         <div className="toolbar">
           <div className="search-bar">
@@ -52,17 +52,17 @@ export function EntityManager<T extends { id?: number }>({
 
             <input
               type="text"
-              placeholder="Rechercher..."
+              placeholder={searchPlaceholder}
               onChange={(e) => console.log("search something", e.target.value)}
             />
           </div>
 
-          {extraActionButton && <div>{extraActionButton}</div>}
+          {extraActionButton}
         </div>
       </div>
 
       <div className="table-container">
-        <table>
+        <table className="data-table">
           <thead>
             <tr>
               {fields.map((f, idx) => (
@@ -72,7 +72,7 @@ export function EntityManager<T extends { id?: number }>({
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
+            {data.map((item) => (
               <tr key={item.id}>
                 {fields.map((f, idx) => (
                   <td key={idx}>
@@ -83,18 +83,25 @@ export function EntityManager<T extends { id?: number }>({
                         : String(item[f.key])}
                   </td>
                 ))}
-                <td>
-                  <div className="action-buttons">
-                    <button className="btn-icon btn-edit">
+                <td className="actions-cell">
+                  {onEdit && (
+                    <button
+                      className="btn-icon btn-edit"
+                      onClick={() => onEdit(item)}
+                      title="Edit"
+                    >
                       <Edit className="w-4 h-4" />
                     </button>
+                  )}
+                  {onDelete && (
                     <button
                       className="btn-icon btn-delete"
-                      onClick={() => item.id && onDelete(item.id)}
+                      onClick={() => onDelete(item)}
+                      title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                  </div>
+                  )}
                 </td>
               </tr>
             ))}

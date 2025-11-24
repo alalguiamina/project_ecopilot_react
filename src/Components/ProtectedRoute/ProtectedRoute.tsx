@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 // import default export from jwt-decode
 import { jwtDecode } from "jwt-decode";
 import api from "../../api";
@@ -19,6 +19,7 @@ const ProtectedRoute = ({
   children,
 }: ProtectedRouteProps) => {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const location = useLocation();
 
   useEffect(() => {
     if (user) {
@@ -99,7 +100,10 @@ const ProtectedRoute = ({
 
   if (isAuthorized === null) return <div>Loading...</div>;
 
-  if (!isAuthorized) return <Navigate to="/" replace />;
+  if (!isAuthorized) {
+    console.log("[ProtectedRoute] no user, redirecting to login");
+    return <Navigate to="/login" replace />;
+  }
 
   return children;
 };

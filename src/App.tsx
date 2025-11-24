@@ -14,7 +14,7 @@ import CarbonFootprintPage from "./Components/CarbonFootprintPage/CarbonFootprin
 import ESGIndicatorsPage from "./Components/ESGIndicatorsPage/ESGIndicatorsPage";
 import ProtectedRoute from "./Components/ProtectedRoute/ProtectedRoute";
 import OrganisationPage from "Components/OrganisationPage/OrganisationPage";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { useAuthToken } from "./hooks/useAuthToken";
 import { useGetCurrentUser } from "./hooks";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants";
@@ -31,7 +31,9 @@ export type UserRole = "agent" | "user" | "super_user" | "admin";
 export type User = BackendUser;
 
 function App() {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<BackendUser | null>(null);
+  const [initializing, setInitializing] = useState(true);
 
   const loginMutation = useAuthToken();
 
@@ -46,11 +48,27 @@ function App() {
 
   // on startup, if token exists try to load user
   useEffect(() => {
-    const token =
-      localStorage.getItem(ACCESS_TOKEN) ?? localStorage.getItem("authToken");
-    if (token) {
-      refetch().catch(() => setUser(null));
-    }
+    (async () => {
+      const wasLoggedOut = sessionStorage.getItem("loggedOut") === "1";
+      const token =
+        localStorage.getItem("authToken") ??
+        localStorage.getItem("ACCESS_TOKEN");
+      if (!token || wasLoggedOut) {
+        // clear flag so next startup tries auth normally
+        sessionStorage.removeItem("loggedOut");
+        setUser(null);
+        setInitializing(false);
+        return;
+      }
+      // proceed to refetch current user...
+      try {
+        await refetch();
+      } catch {
+        setUser(null);
+      } finally {
+        setInitializing(false);
+      }
+    })();
   }, []); // run once
 
   const handleLogin = async (
@@ -85,10 +103,35 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem(ACCESS_TOKEN);
-    localStorage.removeItem(REFRESH_TOKEN);
+    // synchronous aggressive logout to avoid any SPA redirect race
+    try {
+      [
+        "authToken",
+        "ACCESS_TOKEN",
+        "access_token",
+        "auth_token",
+        "refreshToken",
+        "REFRESH_TOKEN",
+        "refresh_token",
+      ].forEach((k) => localStorage.removeItem(k));
+      sessionStorage.setItem("loggedOut", "1");
+    } catch (e) {
+      console.warn("[App] clear tokens error", e);
+    }
+
+    try {
+      queryClient.cancelQueries();
+      queryClient.clear();
+    } catch (e) {
+      console.warn("[App] queryClient clear error", e);
+    }
+
     setUser(null);
-    // optionally navigate to /login
+    (window as any).__CURRENT_USER__ = null;
+
+    // force a full navigation (no SPA history) to /login
+    const loginUrl = `${process.env.PUBLIC_URL ?? ""}/login?loggedout=1`;
+    window.location.href = loginUrl;
   };
 
   // render Sidebar only when route is not /login
@@ -98,6 +141,11 @@ function App() {
     if (location.pathname.startsWith("/login")) return null;
     return <Sidebar user={user} />;
   };
+
+  if (initializing) {
+    // TODO: render a loading indicator or placeholder
+    return null;
+  }
 
   return (
     <Router basename={process.env.PUBLIC_URL}>

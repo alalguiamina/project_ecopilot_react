@@ -19,7 +19,7 @@ export function EditSiteDialog({
   // local form state
   const [form, setForm] = React.useState({
     name: "",
-    require_double_validation: false,
+    validationLevel: 0, // 0 = none, 1 = single, 2 = double
     config_json: {},
   });
   const [validationError, setValidationError] = React.useState<string | null>(
@@ -32,7 +32,7 @@ export function EditSiteDialog({
       setValidationError(null);
       setForm({
         name: site.name || "",
-        require_double_validation: site.require_double_validation || false,
+        validationLevel: site.require_double_validation ? 2 : 0,
         config_json: site.config_json || {},
       });
     }
@@ -57,7 +57,7 @@ export function EditSiteDialog({
 
     const updateData: UpdateSiteRequest = {
       name,
-      require_double_validation: form.require_double_validation,
+      require_double_validation: form.validationLevel === 2,
       config_json: form.config_json,
     };
 
@@ -94,19 +94,36 @@ export function EditSiteDialog({
             </div>
 
             <div className="form-field">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={form.require_double_validation}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      require_double_validation: e.target.checked,
-                    })
-                  }
-                />
-                <span>Require Double Validation</span>
-              </label>
+              <label>Niveau de validation</label>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <label
+                  style={{ display: "flex", alignItems: "center", gap: 6 }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.validationLevel === 1}
+                    onChange={() => {
+                      const next = form.validationLevel === 1 ? 0 : 1;
+                      setForm({ ...form, validationLevel: next });
+                    }}
+                  />
+                  <span style={{ fontSize: 13 }}>1</span>
+                </label>
+
+                <label
+                  style={{ display: "flex", alignItems: "center", gap: 6 }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.validationLevel === 2}
+                    onChange={() => {
+                      const next = form.validationLevel === 2 ? 0 : 2;
+                      setForm({ ...form, validationLevel: next });
+                    }}
+                  />
+                  <span style={{ fontSize: 13 }}>2</span>
+                </label>
+              </div>
             </div>
           </div>
         </div>

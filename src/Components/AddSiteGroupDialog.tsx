@@ -111,44 +111,47 @@ export function AddSiteGroupDialog({
                   <option value="Interne">Interne</option>
                   <option value="Externe">Externe</option>
                 </select>
+              </div>
+            </div>
 
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <label
-                    style={{ display: "flex", alignItems: "center", gap: 6 }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={((newGroup as any).validationLevel ?? 0) === 1}
-                      onChange={() => {
-                        const current = (newGroup as any).validationLevel ?? 0;
-                        const next = current === 1 ? 0 : 1;
-                        setNewGroup({
-                          ...newGroup,
-                          ...({ validationLevel: next } as any),
-                        });
-                      }}
-                    />
-                    <span style={{ fontSize: 13 }}>Validation 1 niveau</span>
-                  </label>
+            <div className="form-field">
+              <label>Niveau de validation</label>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <label
+                  style={{ display: "flex", alignItems: "center", gap: 6 }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={((newGroup as any).validationLevel ?? 0) === 1}
+                    onChange={() => {
+                      const current = (newGroup as any).validationLevel ?? 0;
+                      const next = current === 1 ? 0 : 1;
+                      setNewGroup({
+                        ...newGroup,
+                        ...({ validationLevel: next } as any),
+                      });
+                    }}
+                  />
+                  <span style={{ fontSize: 13 }}>1</span>
+                </label>
 
-                  <label
-                    style={{ display: "flex", alignItems: "center", gap: 6 }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={((newGroup as any).validationLevel ?? 0) === 2}
-                      onChange={() => {
-                        const current = (newGroup as any).validationLevel ?? 0;
-                        const next = current === 2 ? 0 : 2;
-                        setNewGroup({
-                          ...newGroup,
-                          ...({ validationLevel: next } as any),
-                        });
-                      }}
-                    />
-                    <span style={{ fontSize: 13 }}>Validation 2 niveaux</span>
-                  </label>
-                </div>
+                <label
+                  style={{ display: "flex", alignItems: "center", gap: 6 }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={((newGroup as any).validationLevel ?? 0) === 2}
+                    onChange={() => {
+                      const current = (newGroup as any).validationLevel ?? 0;
+                      const next = current === 2 ? 0 : 2;
+                      setNewGroup({
+                        ...newGroup,
+                        ...({ validationLevel: next } as any),
+                      });
+                    }}
+                  />
+                  <span style={{ fontSize: 13 }}>2</span>
+                </label>
               </div>
             </div>
 

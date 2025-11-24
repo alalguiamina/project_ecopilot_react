@@ -20,12 +20,13 @@ import { useGetCurrentUser } from "./hooks";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants";
 
 import type { User as BackendUser } from "./types/user";
-import { CanevasPage } from "Components/DataEntryPage/CanevasPage";
+
 import { ValidationPage } from "Components/DataEntryPage/ValidationPage";
 import Login from "Components/Login/Login";
 import Sidebar from "./Components/Sidebar/Sidebar";
-import DataEntryPage from "Components/DataEntryPage/DataEntryPage";
+
 import CarbonFootprintPage from "Components/CarbonFootprintPage/CarbonFootprintPage";
+import CanevasPage from "Components/DataEntryPage/CanevasPage";
 
 export type UserRole = "agent" | "user" | "super_user" | "admin";
 
@@ -181,14 +182,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/data-entry"
-              element={
-                <ProtectedRoute user={user}>
-                  <DataEntryPage user={user!} />
-                </ProtectedRoute>
-              }
-            />
+
             <Route
               path="/data-entry/canevas"
               element={

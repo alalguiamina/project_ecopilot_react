@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./Sidebar.css";
 import dashboardIcon from "../../Assets/dashboard.png";
@@ -29,6 +29,7 @@ type MenuItem = {
 const Sidebar = ({ user }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const menuItems: MenuItem[] = [
     {
@@ -120,6 +121,30 @@ const Sidebar = ({ user }: SidebarProps) => {
   // determine active path (safe for optional path)
   const isActive = (path?: string) => !!path && location.pathname === path;
 
+  // Check if any child is active
+  const isChildActive = (children?: MenuItem[]) => {
+    if (!children) return false;
+    return children.some((child) => isActive(child.path));
+  };
+
+  // Toggle expansion of menu items with children
+  const toggleExpansion = (itemId: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId],
+    );
+  };
+
+  // Handle click - expand if has children, navigate if has path
+  const handleItemClick = (item: MenuItem) => {
+    if (item.children && item.children.length > 0) {
+      toggleExpansion(item.id);
+    } else if (item.path) {
+      navigate(item.path);
+    }
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -130,10 +155,14 @@ const Sidebar = ({ user }: SidebarProps) => {
         {filteredMenuItems.map((item) => (
           <div key={item.id}>
             <button
-              onClick={() => item.path && navigate(item.path)}
-              className={`sidebar-item ${isActive(item.path) ? "active" : ""}`}
+              onClick={() => handleItemClick(item)}
+              className={`sidebar-item ${
+                isActive(item.path) || isChildActive(item.children)
+                  ? "active"
+                  : ""
+              }`}
               style={
-                isActive(item.path)
+                isActive(item.path) || isChildActive(item.children)
                   ? {
                       backgroundColor: `${item.color}15`,
                       color: item.color,
@@ -153,10 +182,26 @@ const Sidebar = ({ user }: SidebarProps) => {
                 }}
               />
               <span className="sidebar-label">{item.label}</span>
+              {/* Add expand/collapse indicator for items with children */}
+              {item.children && item.children.length > 0 && (
+                <span
+                  className="expand-indicator"
+                  style={{
+                    marginLeft: "auto",
+                    transform: expandedItems.includes(item.id)
+                      ? "rotate(90deg)"
+                      : "rotate(0deg)",
+                    transition: "transform 0.2s ease",
+                  }}
+                >
+                  ▶
+                </span>
+              )}
             </button>
 
-            {/* render children if any */}
+            {/* render children if expanded and has children */}
             {item.children &&
+              expandedItems.includes(item.id) &&
               item.children.map((child) => (
                 <button
                   key={child.id}

@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-// import default export from jwt-decode
-import { jwtDecode } from "jwt-decode";
-import api from "../../api";
-// use the same keys your auth hook stores (authToken / refreshToken)
-import { REFRESH_TOKEN, ACCESS_TOKEN } from "../../constants";
 import type { User } from "../../App";
 
 type ProtectedRouteProps = {
@@ -18,93 +13,87 @@ const ProtectedRoute = ({
   requiredRole,
   children,
 }: ProtectedRouteProps) => {
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-  const location = useLocation();
+  console.log(
+    "[ProtectedRoute] checking access - user:",
+    user,
+    "requiredRole:",
+    requiredRole,
+  );
 
-  useEffect(() => {
-    if (user) {
-      if (requiredRole && user.role !== requiredRole) {
-        setIsAuthorized(false);
-      } else {
-        setIsAuthorized(true);
-      }
-      return;
-    }
-
-    const runAuth = async () => {
-      try {
-        await auth();
-      } catch {
-        setIsAuthorized(false);
-      }
-    };
-
-    runAuth();
-  }, [user, requiredRole]);
-
-  const refreshToken = async () => {
-    // use same storage key as your auth hook (fallback to constant if defined)
-    const refresh =
-      localStorage.getItem(REFRESH_TOKEN) ??
-      localStorage.getItem("refreshToken");
-    if (!refresh) {
-      setIsAuthorized(false);
-      return;
-    }
-
-    try {
-      // use the refresh endpoint that your backend exposes
-      const res = await api.post("/token/refresh/", {
-        refresh,
-      });
-
-      if (res.status === 200 && res.data?.access) {
-        // store under the same key your auth flow uses
-        localStorage.setItem(ACCESS_TOKEN ?? "authToken", res.data.access);
-        setIsAuthorized(true);
-      } else {
-        setIsAuthorized(false);
-      }
-    } catch (error) {
-      console.error("refreshToken error", error);
-      setIsAuthorized(false);
-    }
-  };
-
-  const auth = async () => {
-    const token =
-      localStorage.getItem(ACCESS_TOKEN) ??
-      localStorage.getItem("authToken") ??
-      null;
-
-    if (!token) {
-      setIsAuthorized(false);
-      return;
-    }
-
-    try {
-      const decoded: any = jwtDecode(token);
-      const tokenExpiration = decoded?.exp ?? 0;
-      const now = Date.now() / 1000;
-
-      if (tokenExpiration < now) {
-        await refreshToken();
-      } else {
-        setIsAuthorized(true);
-      }
-    } catch (err) {
-      console.error("auth decode error", err);
-      await refreshToken();
-    }
-  };
-
-  if (isAuthorized === null) return <div>Loading...</div>;
-
-  if (!isAuthorized) {
+  // If no user, redirect to login immediately
+  if (!user) {
     console.log("[ProtectedRoute] no user, redirecting to login");
     return <Navigate to="/login" replace />;
   }
 
+  // Check role-based access
+  if (requiredRole && user.role !== requiredRole) {
+    console.log(
+      `[ProtectedRoute] Access denied. User role: ${user.role}, Required: ${requiredRole}`,
+    );
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "18px",
+          color: "#ef4444",
+        }}
+      >
+        <h2>Access Denied</h2>
+        <p>You need admin privileges to access this page.</p>
+        <p>
+          Your current role: <strong>{user.role}</strong>
+        </p>
+        <button
+          onClick={() => window.history.back()}
+          style={{
+            marginTop: "20px",
+            padding: "10px 20px",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          Go Back
+        </button>
+        <button
+          onClick={() => {
+            // Force logout to clear everything
+            [
+              "authToken",
+              "ACCESS_TOKEN",
+              "access_token",
+              "auth_token",
+              "refreshToken",
+              "REFRESH_TOKEN",
+              "refresh_token",
+            ].forEach((k) => localStorage.removeItem(k));
+            window.location.href = "/login";
+          }}
+          style={{
+            marginTop: "10px",
+            padding: "10px 20px",
+            backgroundColor: "#ef4444",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          Logout
+        </button>
+      </div>
+    );
+  }
+
+  console.log(`[ProtectedRoute] Access granted. User role: ${user.role}`);
   return children;
 };
 

@@ -4,27 +4,41 @@ html {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: #f0f0f0;
+  background: transparent; /* Let the login wrapper handle background */
+  overflow: auto;
+}
+
+/* === Full screen background wrapper === */
+.login-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: auto; /* permet le scroll si nécessaire */
+  margin: 0;
+  padding: 0;
+  z-index: 1;
 }
 
-/* === Conteneur principal (agrandi) === */
+/* === Conteneur principal (plus petit en largeur) === */
 .container {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   width: 100%;
-  max-width: 700px; /* élargi (avant 450px) */
+  max-width: 450px; /* retour à une largeur plus petite */
   background: #fff;
-  padding: 60px 40px; /* plus d’espace interne */
+  padding: 60px 40px; /* plus d'espace interne */
   border-radius: 18px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
-  transform: scale(0.9); /* légère mise à l’échelle */
+  transform: scale(0.9); /* légère mise à l'échelle */
+  position: relative;
+  z-index: 2;
 }
 .logo {
   width: 180px; /* ajuste la taille selon ton image */

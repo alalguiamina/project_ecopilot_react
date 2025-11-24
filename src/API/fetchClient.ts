@@ -11,10 +11,11 @@ export interface ApiResponse<T> {
   status: number;
 }
 
-const API_BASE_URL = (process.env.REACT_APP_API_BASE_URL || "").replace(
-  /\/$/,
-  "",
-);
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
+
+console.log("[API] Using base URL:", API_BASE_URL); // Add this to debug
+
 const REFRESH_ENDPOINT =
   process.env.REACT_APP_AUTH_REFRESH_ENDPOINT ?? "/token/refresh/";
 
@@ -56,6 +57,10 @@ export async function fetchClient<T>(
   endpoint: string,
   options: FetchOptions = {},
 ): Promise<ApiResponse<T>> {
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  console.log("[fetchClient] Full URL:", url); // Add this to debug
+
   // pick token from common keys
   let token =
     localStorage.getItem("authToken") ||
@@ -76,14 +81,12 @@ export async function fetchClient<T>(
     headers["Content-Type"] = headers["Content-Type"] ?? "application/json";
   }
 
-  const fullUrl = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : "/" + endpoint}`;
-
-  console.log("[fetchClient] Request ->", options.method ?? "GET", fullUrl);
+  console.log("[fetchClient] Request ->", options.method ?? "GET", url);
   console.log("[fetchClient] Headers:", headers);
   console.log("[fetchClient] Body:", options.body);
 
   const doFetch = async (authHeaders: Record<string, string>) =>
-    fetch(fullUrl, {
+    fetch(url, {
       method: options.method ?? "GET",
       headers: authHeaders,
       mode: "cors",
@@ -147,6 +150,7 @@ export async function fetchClient<T>(
     };
   } catch (networkError) {
     console.error("[fetchClient] Network error ->", networkError);
+    console.error("[fetchClient] Attempted URL:", url);
     return {
       error: { message: "Network error", detail: String(networkError) },
       status: 0,

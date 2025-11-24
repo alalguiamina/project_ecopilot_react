@@ -8,11 +8,12 @@ export interface Site {
 }
 export interface SiteGroup {
   id?: number;
-  name: string;
-  description: string;
-  type: "Interne" | "Externe";
-  siteId: number | "";
-  members: number[];
+  name: string; // Nom de l'unité
+  description: string; // Description
+  type: "Interne" | "Externe"; // Type
+  siteId: number | ""; // Site selection
+  members: number[]; // Membres (user IDs)
+  validationLevel?: 0 | 1 | 2; // Niveau de validation
 }
 
 export interface UserData {

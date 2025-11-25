@@ -152,7 +152,7 @@ function App() {
     const location = useLocation();
     // hide sidebar on login page (and any subpath starting with /login)
     if (location.pathname.startsWith("/login")) return null;
-    return <Sidebar user={user} />;
+    return <Sidebar user={user!} />;
   };
 
   if (initializing) {

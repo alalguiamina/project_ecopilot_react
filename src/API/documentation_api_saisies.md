@@ -6,11 +6,12 @@
 Ce document détaille les endpoints, les formats de données et les règles métier pour le module de saisie des indicateurs environnementaux.
 
 ## 🌍 Base URL & Authentification
-* **Base URL** : `/core/saisies/`
-* **Authentification** : Requise pour tous les appels (Header `Authorization`).
-* **Portée (Scope)** :
-    * **ADMIN** : Accès à toutes les données.
-    * **USER / AGENT / SUPERUSER** : Accès limité aux sites auxquels l'utilisateur est affecté.
+
+- **Base URL** : `/core/saisies/`
+- **Authentification** : Requise pour tous les appels (Header `Authorization`).
+- **Portée (Scope)** :
+  - **ADMIN** : Accès à toutes les données.
+  - **USER / AGENT / SUPERUSER** : Accès limité aux sites auxquels l'utilisateur est affecté.
 
 ---
 
@@ -22,6 +23,7 @@ Ce document détaille les endpoints, les formats de données et les règles mét
 Récupère l'historique des rapports mensuels. Les valeurs (indicateurs) sont imbriquées dans la réponse.
 
 ### Exemple de Réponse (200 OK)
+
 ```json
 [
   {
@@ -29,7 +31,7 @@ Récupère l'historique des rapports mensuels. Les valeurs (indicateurs) sont im
     "site": 5,
     "mois": 1,
     "annee": 2025,
-    "statut": "en_attente", 
+    "statut": "en_attente",
     "require_double_validation": true,
     "created_by": 1,
     "date_creation": "2025-01-15T10:00:00Z",
@@ -41,23 +43,24 @@ Récupère l'historique des rapports mensuels. Les valeurs (indicateurs) sont im
       {
         "id": 101,
         "type_indicateur": 45,
-        "valeur": 1500.50,
+        "valeur": 1500.5,
         "unite": "kWh"
       },
       {
         "id": 102,
         "type_indicateur": 46,
-        "valeur": 200.00,
+        "valeur": 200.0,
         "unite": "m3"
       }
     ]
   }
 ]
+```
 ````
 
 > **Note Front-end :** Le champ `require_double_validation` (booléen) vous permet de savoir si vous devez afficher une barre de progression à 1 ou 2 étapes dans l'interface.
 
------
+---
 
 ## 2\. 📝 Créer une Saisie (Create)
 
@@ -80,8 +83,8 @@ Permet de créer un rapport mensuel complet (Dossier + Lignes de valeurs) en une
   "annee": 2025,
   "valeurs": [
     {
-      "type_indicateur": 45, 
-      "valeur": 1200.00,
+      "type_indicateur": 45,
+      "valeur": 1200.0,
       "unite": "kWh"
     },
     {
@@ -95,11 +98,11 @@ Permet de créer un rapport mensuel complet (Dossier + Lignes de valeurs) en une
 
 ### Erreurs Fréquentes (400 Bad Request)
 
-  * **Doublon :** `{"non_field_errors": ["Une saisie existe déjà pour ce site à cette date."]}`
-  * **Manquant :** `{"non_field_errors": ["Les indicateurs obligatoires suivants sont manquants : ['Electricité']"]}`
-  * **Intrus :** `{"non_field_errors": ["Les indicateurs suivants ne sont pas configurés pour ce site..."]}`
+- **Doublon :** `{"non_field_errors": ["Une saisie existe déjà pour ce site à cette date."]}`
+- **Manquant :** `{"non_field_errors": ["Les indicateurs obligatoires suivants sont manquants : ['Electricité']"]}`
+- **Intrus :** `{"non_field_errors": ["Les indicateurs suivants ne sont pas configurés pour ce site..."]}`
 
------
+---
 
 ## 3\. ✏️ Modifier une Saisie (Update)
 
@@ -111,7 +114,7 @@ Permet de corriger des valeurs ou de changer le mois/année.
 
 Si vous envoyez le champ `valeurs`, **la liste existante en base est supprimée et remplacée** par la nouvelle liste envoyée.
 
-  * **Conséquence :** Le Front-end doit toujours renvoyer **toutes** les lignes du tableau, même celles qui n'ont pas changé.
+- **Conséquence :** Le Front-end doit toujours renvoyer **toutes** les lignes du tableau, même celles qui n'ont pas changé.
 
 ### Verrouillage
 
@@ -124,19 +127,19 @@ La modification est **interdite** (400 Bad Request) si le statut de la saisie es
   "valeurs": [
     {
       "type_indicateur": 45,
-      "valeur": 1300.00, // Correction de la valeur
+      "valeur": 1300.0, // Correction de la valeur
       "unite": "kWh"
     },
     {
-       "type_indicateur": 46,
-       "valeur": 180.5, // Doit être renvoyé même si inchangé
-       "unite": "m3"
+      "type_indicateur": 46,
+      "valeur": 180.5, // Doit être renvoyé même si inchangé
+      "unite": "m3"
     }
   ]
 }
 ```
 
------
+---
 
 ## 4\. ✅ Workflow de Validation (Action)
 
@@ -148,7 +151,7 @@ Endpoint dédié pour changer le statut (Valider ou Rejeter). Ne modifiez pas le
 
 ```json
 {
-  "action": "valider" 
+  "action": "valider"
   // OU
   "action": "rejeter"
 }
@@ -158,18 +161,18 @@ Endpoint dédié pour changer le statut (Valider ou Rejeter). Ne modifiez pas le
 
 Voici quand afficher les boutons d'action selon le rôle et le contexte :
 
-| Statut Actuel | Rôle Utilisateur | Site à Double Validation ? | Action Possible | Nouvel État (si Valider) |
-| :--- | :--- | :--- | :--- | :--- |
-| **En attente** | ADMIN | Oui/Non | Valider / Rejeter | Validé (Admin bypass) |
-| **En attente** | USER | **Oui** | Valider / Rejeter | Validé Partiellement |
-| **En attente** | USER | **Non** | Valider / Rejeter | Validé |
-| **En attente** | SUPERUSER | Non | Valider / Rejeter | Validé |
-| **Validé Partiellement** | SUPERUSER | **Oui** | Valider / Rejeter | Validé |
-| *Autres cas* | *Tout le monde* | *Peu importe* | *Aucune action* | - |
+| Statut Actuel            | Rôle Utilisateur | Site à Double Validation ? | Action Possible   | Nouvel État (si Valider) |
+| :----------------------- | :--------------- | :------------------------- | :---------------- | :----------------------- |
+| **En attente**           | ADMIN            | Oui/Non                    | Valider / Rejeter | Validé (Admin bypass)    |
+| **En attente**           | USER             | **Oui**                    | Valider / Rejeter | Validé Partiellement     |
+| **En attente**           | USER             | **Non**                    | Valider / Rejeter | Validé                   |
+| **En attente**           | SUPERUSER        | Non                        | Valider / Rejeter | Validé                   |
+| **Validé Partiellement** | SUPERUSER        | **Oui**                    | Valider / Rejeter | Validé                   |
+| _Autres cas_             | _Tout le monde_  | _Peu importe_              | _Aucune action_   | -                        |
 
 > 🚫 **Note :** Les utilisateurs ayant le rôle **AGENT** ne peuvent jamais valider. Ils peuvent uniquement créer (POST) ou modifier (PATCH).
 
------
+---
 
 ## 💡 Algorithme pour le Formulaire Front-end
 
@@ -184,4 +187,5 @@ Pour générer le formulaire de saisie dynamiquement :
 <!-- end list -->
 
 ```
+
 ```

@@ -6,7 +6,6 @@ export { useUpdateUser } from "./useUpdateUser";
 export { usePartialUpdateUser } from "./usePartialUpdateUser";
 export { useDeleteUser } from "./useDeleteUser";
 export { useAuthToken } from "./useAuthToken";
-export { useGetTypeIndicators } from "./useGetTypeIndicators";
 export { useCreateSite } from "./useCreateSite";
 export { useUpdateSite } from "./useUpdateSite";
 export { useUpdateSiteConfig } from "./useUpdateSiteConfig";
@@ -16,3 +15,27 @@ export { useGetCurrentUser } from "./useGetCurrentUser";
 
 // Other hooks
 export { usePageTitle } from "./usePageTitle";
+
+// Export types from user
+export type {
+  User,
+  CreateUserRequest,
+  PartialUpdateUserRequest,
+  DeleteUserResponse,
+  UserRole,
+} from "../types/user";
+
+// Export types from sites
+export type {
+  Site,
+  CreateSiteRequest,
+  UpdateSiteRequest,
+  SiteConfigUpdate,
+  SiteConfigItem,
+} from "../types/site";
+
+// Export types from typeIndicateurs
+export type {
+  TypeIndicateur,
+  TypeIndicateursErrorResponse,
+} from "../types/typeIndicateurs";

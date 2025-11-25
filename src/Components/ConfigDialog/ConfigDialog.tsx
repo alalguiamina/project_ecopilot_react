@@ -12,11 +12,11 @@ import { useGetPostesEmission } from "../../hooks/useGetPostesEmission";
 import { useUpdateSiteConfig } from "../../hooks/useUpdateSiteConfig";
 import { useGetPosteIndicateurs } from "../../hooks/useGetPosteIndicateurs";
 import { useGetSiteConfig } from "../../hooks/useGetSiteConfig";
-import type { Site } from "../../types/site";
 import type { PosteEmission } from "../../types/postesEmission";
 import type { PosteIndicateur } from "../../types/postesIndicateurs";
 import "./ConfigDialog.css";
-import SearchableCombobox from "Components/SearchableCombobox";
+import { UserComboBox } from "../UserComboBox";
+import { SiteComboBox } from "../SiteComboBox";
 
 // NEW IMPORT
 
@@ -43,6 +43,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   onClose,
 }) => {
   const [selectedSite, setSelectedSite] = useState<number | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [expandedPostes, setExpandedPostes] = useState<Set<number>>(new Set());
   const [siteConfig, setSiteConfig] = useState<SiteConfig>({
     siteId: 0,
@@ -54,6 +55,20 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   const { data: sites, isLoading: sitesLoading } = useGetSites();
   const { data: postes, isLoading: postesLoading } = useGetPostesEmission();
   const updateSiteConfigMutation = useUpdateSiteConfig();
+
+  // Reset all form state when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedSite(null);
+      setSelectedUsers([]);
+      setExpandedPostes(new Set());
+      setSiteConfig({
+        siteId: 0,
+        postesConfig: {},
+      });
+      setPosteIndicateursData({});
+    }
+  }, [isOpen]);
 
   // Load existing site configuration
   const { data: existingConfig, isLoading: configLoading } =
@@ -107,9 +122,11 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
     setPosteIndicateursData({});
   }, [selectedSite, postes, existingConfig]);
 
-  const handleSiteSelect = (siteId: number) => {
+  const handleSiteSelect = (siteId: number | null) => {
     setSelectedSite(siteId);
     setExpandedPostes(new Set());
+    // Clear poste indicateurs data when changing sites
+    setPosteIndicateursData({});
   };
 
   const togglePosteExpansion = (posteId: number) => {
@@ -123,11 +140,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   };
 
   const handleIndicateurToggle = (posteId: number, indicateurId: number) => {
-    console.log("🔄 Toggle called:", { posteId, indicateurId });
-
     setSiteConfig((prev) => {
-      console.log("📊 Previous state:", prev);
-
       // ✅ DEEP COPY - This is crucial!
       const newConfig: SiteConfig = {
         siteId: prev.siteId,
@@ -145,23 +158,17 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
       const newIndicateurs = [...currentIndicateurs];
 
       const index = newIndicateurs.indexOf(indicateurId);
-      console.log("@Index of indicateur:", index);
 
       if (index > -1) {
         newIndicateurs.splice(index, 1);
-        console.log("@Removed indicateur");
       } else {
         newIndicateurs.push(indicateurId);
-        console.log("@Added indicateur");
       }
 
       // ✅ Create entirely new object for this poste
       newConfig.postesConfig[posteId] = {
         indicateurs: newIndicateurs,
       };
-
-      console.log("@New state:", newConfig);
-      console.log("@New indicateurs for poste", posteId, ":", newIndicateurs);
 
       return newConfig;
     });
@@ -190,7 +197,6 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
       alert("Configuration sauvegardée avec succès!");
       onClose();
     } catch (error) {
-      console.error("Error saving configuration:", error);
       alert("Erreur lors de la sauvegarde de la configuration");
     }
   };
@@ -232,33 +238,71 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
             </div>
           ) : (
             <>
-              {/* Sites Selection */}
+              {/* Sites and Users Selection */}
               <div className="sites-section">
-                <h3>Sélectionner un site</h3>
-                <div className="site-select-wrapper">
-                  {/* ✅ REPLACED <select> WITH SEARCHABLE COMBOBOX */}
-                  <SearchableCombobox
-                    items={(sites || []).map((site) => ({
-                      value: site.id,
-                      label: site.name,
-                    }))}
-                    value={selectedSite}
-                    placeholder="Choisir un site..."
-                    onChange={(id: any) => handleSiteSelect(Number(id))}
-                  />
+                <h3>Sélectionner un site et un utilisateur</h3>
+                <div
+                  className="selection-wrapper"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "16px",
+                  }}
+                >
+                  <div className="site-select-wrapper">
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Site
+                    </label>
+                    <SiteComboBox
+                      value={selectedSite}
+                      placeholder="Choisir un site..."
+                      onChange={handleSiteSelect}
+                      inputId="config-site-select"
+                      isClearable={true}
+                    />
+                  </div>
+
+                  <div className="user-select-wrapper">
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Utilisateur
+                    </label>
+                    <UserComboBox
+                      value={selectedUsers}
+                      onChange={(userIds) =>
+                        setSelectedUsers(userIds as number[])
+                      }
+                      placeholder="Choisir des utilisateurs..."
+                      inputId="config-user-select"
+                      isClearable={true}
+                    />
+                  </div>
                 </div>
 
                 {selectedSite && getSelectedSiteName() && (
-                  <div className="selected-site-info">
-                    <div className="site-info-card">
-                      <div className="site-info-name">
-                        {getSelectedSiteName()}
-                      </div>
-                      <div className="site-info-validation">
-                        {sites?.find((s) => s.id === selectedSite)
-                          ?.require_double_validation
-                          ? "Double validation requise"
-                          : "Validation simple"}
+                  <div className="selected-info" style={{ marginTop: "16px" }}>
+                    <div className="selected-site-info">
+                      <div className="site-info-card">
+                        <div className="site-info-name">
+                          Site: {getSelectedSiteName()}
+                        </div>
+                        <div className="site-info-validation">
+                          {sites?.find((s) => s.id === selectedSite)
+                            ?.require_double_validation
+                            ? "Double validation requise"
+                            : "Validation simple"}
+                        </div>
                       </div>
                     </div>
                   </div>

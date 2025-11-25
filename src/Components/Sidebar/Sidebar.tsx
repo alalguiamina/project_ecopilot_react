@@ -41,20 +41,20 @@ const Sidebar = ({ user }: SidebarProps) => {
     },
     {
       id: "data-entry",
-      label: "Saisie de données",
+      label: "Panel de saisie",
       icon: penIcon,
       color: "#16a34a",
       children: [
         {
           id: "canevas",
-          label: "Canevas de Saisie",
-          icon: penIcon,
-          color: "#16a34a",
+          label: "Canevas et validation",
+          icon: canevasIcon,
+          color: "#1063d7ff",
           path: "/data-entry/canevas",
         },
         {
           id: "validation",
-          label: "Validation de Données",
+          label: "Saisie de Données",
           icon: penIcon,
           color: "#555",
           path: "/data-entry/validation",

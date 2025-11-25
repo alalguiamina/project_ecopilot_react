@@ -77,20 +77,6 @@ export function AddUserDialog({
     onSave(payload);
   }
 
-  // ✅ ADD: Manual form clear function
-  function handleClearForm() {
-    setNewUser({
-      username: "",
-      email: "",
-      firstName: "",
-      lastName: "",
-      password: "",
-      role: "user",
-      sites: [],
-      site: undefined,
-    });
-  }
-
   return (
     <div className="dialog-overlay">
       <div className="dialog">
@@ -102,22 +88,6 @@ export function AddUserDialog({
         </div>
 
         <div className="dialog-content">
-          {/* ✅ ADD: Manual clear button for testing */}
-          <button
-            type="button"
-            onClick={handleClearForm}
-            style={{
-              marginBottom: "10px",
-              padding: "4px 8px",
-              fontSize: "12px",
-              background: "#f0f0f0",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-            }}
-          >
-            Clear Form
-          </button>
-
           <form autoComplete="off">
             <div className="form-grid-2">
               <div className="form-field">
@@ -249,22 +219,6 @@ export function AddUserDialog({
               </div>
             </div>
           </form>
-
-          <div
-            style={{
-              background: "#f0f0f0",
-              padding: "10px",
-              margin: "10px 0",
-              borderRadius: "4px",
-              fontSize: "12px",
-            }}
-          >
-            <strong>Debug Info:</strong>
-            <div>Username: "{newUser.username}"</div>
-            <div>Role: "{newUser.role}"</div>
-            <div>Site: {newUser.site}</div>
-            <div>Sites Array: {JSON.stringify(newUser.sites)}</div>
-          </div>
         </div>
 
         {validationError && (

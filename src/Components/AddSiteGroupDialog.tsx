@@ -1,12 +1,10 @@
 import { X } from "lucide-react";
-import Select, { components } from "react-select";
 // use relative path to your organisation types
 import { SiteGroup, UserData } from "../types/organisation";
 
 interface AddSiteGroupDialogProps {
   isOpen: boolean;
   newGroup: SiteGroup;
-  people: UserData[];
   setNewGroup: (g: SiteGroup) => void;
   onAddGroup: () => void;
   onClose: () => void;
@@ -16,55 +14,10 @@ export function AddSiteGroupDialog({
   isOpen,
   newGroup,
   setNewGroup,
-  people,
   onAddGroup,
   onClose,
 }: AddSiteGroupDialogProps) {
   if (!isOpen) return null;
-  // Build dropdown options from people
-  const memberOptions = people.map((p) => ({
-    value: p.id,
-    label: `${p.firstName} ${p.lastName} (${p.username})`,
-    role: p.role,
-  }));
-
-  const Option = (props: any) => {
-    const { data } = props;
-    const getRoleStyle = (role: string) => {
-      switch (role) {
-        case "Admin":
-          return { background: "#fee2e2", color: "#b91c1c" };
-        case "Super User":
-          return { background: "#f3e8ff", color: "#7e22ce" };
-        case "User":
-          return { background: "#dbeafe", color: "#1d4ed8" };
-        case "Agent de saisie":
-          return { background: "#dcfce7", color: "#15803d" };
-        default:
-          return { background: "#e2e8f0", color: "#475569" };
-      }
-    };
-
-    const roleStyle = getRoleStyle(data.role);
-    return (
-      <components.Option {...props}>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span>{data.label}</span>
-          <span
-            style={{
-              ...roleStyle,
-              padding: "2px 6px",
-              borderRadius: 6,
-              fontSize: 12,
-              marginLeft: 8,
-            }}
-          >
-            {data.role}
-          </span>
-        </div>
-      </components.Option>
-    );
-  };
 
   return (
     <div className="dialog-overlay">
@@ -165,33 +118,6 @@ export function AddSiteGroupDialog({
                   setNewGroup({ ...newGroup, description: e.target.value })
                 }
                 placeholder=" Enter description"
-              />
-            </div>
-
-            <div className="form-field full-width">
-              <label htmlFor="members">Affecter des personnes</label>
-
-              <Select
-                inputId="members"
-                options={memberOptions}
-                isMulti
-                closeMenuOnSelect={false}
-                components={{ Option }}
-                placeholder="Sélectionner des utilisateurs..."
-                value={memberOptions.filter((o) =>
-                  newGroup.members.includes(o.value),
-                )}
-                onChange={(selected: any) => {
-                  const ids = selected.map((s: any) => s.value);
-                  setNewGroup({ ...newGroup, members: ids });
-                }}
-                styles={{
-                  menu: (provided) => ({ ...provided, zIndex: 9999 }),
-                  multiValueLabel: (styles) => ({
-                    ...styles,
-                    fontWeight: "bold",
-                  }),
-                }}
               />
             </div>
           </div>

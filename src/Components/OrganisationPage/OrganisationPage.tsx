@@ -89,7 +89,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
   // UI user form state (for Add)
-  const [newUser, setNewUser] = useState<NewUser>({
+  const [newUser, setNewUser] = useState<NewUser>(() => ({
     username: "",
     firstName: "",
     lastName: "",
@@ -97,7 +97,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
     password: "",
     site: "",
     role: "user",
-  });
+  }));
 
   // Currently edited user in UI shape
   const [userBeingEdited, setUserBeingEdited] = useState<UserData | null>(null);
@@ -172,18 +172,27 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
 
   // ---- Handlers that call backend ----
 
+  // Helper function to get clean user form state
+  const getCleanUserState = (): NewUser => ({
+    username: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    site: "",
+    role: "user",
+  });
+
+  const handleOpenAddUserDialog = () => {
+    // Reset form to clean state when opening the dialog
+    setNewUser(getCleanUserState());
+    setIsAddDialogOpen(true);
+  };
+
   const handleAddUser = async (payload: CreateUserRequest) => {
     createUser.mutate(payload, {
       onSuccess: () => {
-        setNewUser({
-          username: "",
-          firstName: "",
-          lastName: "",
-          email: "",
-          password: "",
-          site: "",
-          role: "user", // lowercase to match dialog options
-        });
+        setNewUser(getCleanUserState());
         setIsAddDialogOpen(false);
       },
       onError: (err) => {
@@ -408,7 +417,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
                 users={filteredUsers}
                 searchQuery={searchQuery}
                 onSearch={setSearchQuery}
-                onAdd={() => setIsAddDialogOpen(true)}
+                onAdd={handleOpenAddUserDialog}
                 onDelete={handleDeleteUser}
                 onEdit={handleEditUser}
               />
@@ -421,7 +430,11 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
                   setNewUser={setNewUser}
                   sites={sites as Site[]}
                   onSave={handleAddUser}
-                  onClose={() => setIsAddDialogOpen(false)}
+                  onClose={() => {
+                    setIsAddDialogOpen(false);
+                    // Reset form state when dialog is closed
+                    setNewUser(getCleanUserState());
+                  }}
                 />
               )}
 
@@ -515,7 +528,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
                     isOpen={isAddGroupOpen}
                     newGroup={newGroup}
                     setNewGroup={setNewGroup}
-                    people={uiUsers}
                     onAddGroup={handleAddGroup}
                     onClose={() => setIsAddGroupOpen(false)}
                   />

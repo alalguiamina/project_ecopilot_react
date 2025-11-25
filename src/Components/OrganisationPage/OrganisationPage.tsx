@@ -40,6 +40,10 @@ interface OrganisationPageProps {
   user: BackendUser; // current logged-in user (do not shadow with other vars)
 }
 
+// Check your localStorage tokens
+console.log("@Access Token:", localStorage.getItem("authToken"));
+console.log("@Refresh Token:", localStorage.getItem("refreshToken"));
+
 const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   const navigate = useNavigate();
   const handleLogout = () => navigate("/");
@@ -96,7 +100,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
     email: "",
     password: "",
     site: "",
-    role: "User",
+    role: "user",
   });
 
   // Currently edited user in UI shape
@@ -108,7 +112,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
       case "Admin":
         return "admin";
       case "Super User":
-        return "super_user";
+        return "superuser";
       case "Agent de saisie":
         return "agent";
       default:
@@ -119,7 +123,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
     switch (r) {
       case "admin":
         return "Admin";
-      case "super_user":
+      case "superuser":
         return "Super User";
       case "agent":
         return "Agent de saisie";
@@ -141,16 +145,23 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
     sites.find((s) => s.id === id)?.name ?? "";
 
   // Convert backend user to UI user shape
-  const backendToUI = (u: BackendUser): UserData => ({
-    id: u.id,
-    username: u.username,
-    firstName: (u.first_name as string) || "",
-    lastName: (u.last_name as string) || "",
-    email: u.email || "",
-    site: siteIdToName(u.sites?.[0]), // assume single-site users; show site name or empty
-    role: backendRoleToUI(u.role),
-    password: undefined,
-  });
+  const backendToUI = (u: BackendUser): UserData => {
+    const mapped = {
+      id: u.id,
+      username: u.username,
+      firstName: (u.first_name as string) || "",
+      lastName: (u.last_name as string) || "",
+      email: u.email || "",
+      site: siteIdToName(u.sites?.[0]), // assume single-site users; show site name or empty
+      role: backendRoleToUI(u.role),
+      password: undefined,
+    };
+
+    // ✅ Debug log to check ID mapping
+    console.log("🔄 Backend user:", u.id, "mapped to UI user:", mapped.id);
+
+    return mapped;
+  };
 
   // Derived list for UI components
   const uiUsers = useMemo(
@@ -168,23 +179,8 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
 
   // ---- Handlers that call backend ----
 
-  const handleAddUser = async () => {
-    if (!newUser.username || !newUser.password || !newUser.site) {
-      alert("Please fill required fields (username, password, site).");
-      return;
-    }
-    const siteId = siteNameToId(newUser.site);
-    if (!siteId) {
-      alert("Selected site invalid.");
-      return;
-    }
-
-    const payload: CreateUserRequest = {
-      username: newUser.username,
-      password: newUser.password,
-      role: uiRoleToBackend(newUser.role),
-      sites: [siteId],
-    };
+  const handleAddUser = async (payload: CreateUserRequest) => {
+    console.log("🔍 Received payload in parent:", payload);
 
     createUser.mutate(payload, {
       onSuccess: () => {
@@ -195,7 +191,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
           email: "",
           password: "",
           site: "",
-          role: "user",
+          role: "user", // lowercase to match dialog options
         });
         setIsAddDialogOpen(false);
       },
@@ -205,7 +201,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
       },
     });
   };
-
   const handleEditUser = (u: UserData) => {
     // open edit dialog with a cloned UI user object
     setUserBeingEdited({ ...u });
@@ -243,14 +238,45 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
     );
   };
 
-  const handleDeleteUser = (id: number) => {
-    if (!window.confirm("Supprimer cet utilisateur ?")) return;
-    deleteUser.mutate(id, {
-      onError: (err) => {
-        console.error("Delete user failed", err);
-        alert("Failed to delete user");
-      },
-    });
+  const handleDeleteUser = async (userId: number) => {
+    console.log("🗑️ Delete handler called with userId:", userId, typeof userId);
+
+    // Find the user in our local state to verify
+    const userToDelete = uiUsers.find((u) => u.id === userId);
+    const backendUser = backendUsers.find((u) => u.id === userId);
+
+    console.log("🔍 Found UI user:", userToDelete);
+    console.log("🔍 Found backend user:", backendUser);
+
+    if (!userToDelete) {
+      alert("User not found in local data!");
+      return;
+    }
+
+    if (
+      window.confirm(
+        `Are you sure you want to delete user "${userToDelete.username}"?`,
+      )
+    ) {
+      try {
+        console.log("🚀 Calling deleteUser.mutateAsync with:", userId);
+        await deleteUser.mutateAsync(userId);
+        alert("User deleted successfully!");
+      } catch (error: any) {
+        console.error("Error deleting user:", error);
+
+        // ✅ Show specific error message to user
+        if (error.message?.includes("Authentication")) {
+          alert("❌ Authentication error: " + error.message);
+        } else if (error.message?.includes("permission")) {
+          alert("❌ Permission error: " + error.message);
+        } else {
+          alert(
+            "❌ Failed to delete user: " + (error.message || "Unknown error"),
+          );
+        }
+      }
+    }
   };
 
   // Create an actual Site in backend when dialog saved.

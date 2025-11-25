@@ -84,24 +84,26 @@ export function EntityManager<T extends { id: number | string }>({
                   </td>
                 ))}
                 <td className="actions-cell">
-                  {onEdit && (
-                    <button
-                      className="btn-icon btn-edit"
-                      onClick={() => onEdit(item)}
-                      title="Edit"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                  )}
-                  {onDelete && (
-                    <button
-                      className="btn-icon btn-delete"
-                      onClick={() => onDelete(item)}
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <div className="action-buttons">
+                    {onEdit && (
+                      <button
+                        className="btn-icon btn-edit"
+                        onClick={() => onEdit(item)}
+                        title="Edit"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        className="btn-icon btn-delete"
+                        onClick={() => onDelete(item)}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

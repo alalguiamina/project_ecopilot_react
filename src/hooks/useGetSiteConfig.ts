@@ -1,14 +1,13 @@
+// useGetSiteConfig.ts - Modified version
 import { useQuery } from "@tanstack/react-query";
-import { fetchClient } from "API/fetchClient";
 
 export const useGetSiteConfig = (siteId: number | null) => {
   return useQuery({
     queryKey: ["siteConfig", siteId],
     queryFn: async () => {
-      if (siteId === null) return null;
-      const response = await fetchClient(`/user/sites/${siteId}/config/`); // adjust endpoint
-      return response.data;
+      // Return null for now - config will be empty on first load
+      return { configs: [] };
     },
-    enabled: !!siteId,
+    enabled: false, // Disable this query for now
   });
 };

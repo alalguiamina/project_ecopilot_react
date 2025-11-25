@@ -233,7 +233,7 @@
 .table-container th {
   background: #f8fafc;
   padding: 20px 16px;
-  text-align: center;
+  text-align: center !important; /* Ensure centering overrides other styles */
   font-size: 16px;
   font-weight: 600;
   color: #334155;
@@ -241,6 +241,7 @@
 }
 
 .table-container td {
+  text-align: center; /* Center cell content to match headers */
   padding: 20px 16px;
   font-size: 14px;
   color: #334155;
@@ -255,9 +256,42 @@
   background: #f6fff4;
 }
 
+.table-cell-actions {
+  vertical-align: middle; /* Centers content vertically in table cells */
+  text-align: center; /* Centers horizontally if needed */
+}
+
+.action-buttons {
+  display: inline-flex; /* Use inline-flex for table cells */
+  gap: 8px;
+  vertical-align: middle;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center; /* Centers buttons relative to each other */
+  justify-content: center; /* Centers the button group horizontally */
+  height: 100%; /* Takes full height of parent to center properly */
+}
+
 /* =========================
    Action Buttons
    ========================= */
+.table-row,
+.row-container,
+.your-row-class {
+  display: flex;
+  align-items: center; /* This centers all content vertically in the row */
+  justify-content: space-between; /* Optional: spreads content across the row */
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center; /* Ensures buttons are centered relative to each other */
+}
+
 .action-buttons {
   display: flex;
   gap: 8px;
@@ -281,10 +315,14 @@
 
 .btn-edit {
   color: #3b82f6;
+  justify-content: center;
+  align-items: center;
 }
 
 .btn-delete {
   color: #ef4444;
+  justify-content: center;
+  align-items: center;
 }
 
 /* =========================

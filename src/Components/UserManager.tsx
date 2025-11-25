@@ -63,6 +63,7 @@ export function UserManager({
         <table>
           <thead>
             <tr>
+              <th>ID</th> {/* ✅ Added ID column for debugging */}
               <th>Username</th>
               <th>Full Name</th>
               <th>Email</th>
@@ -74,6 +75,19 @@ export function UserManager({
           <tbody>
             {filteredUsers.map((user) => (
               <tr key={user.id}>
+                <td>
+                  {/* ✅ Display ID for debugging */}
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      background: "#f0f0f0",
+                      padding: "2px 6px",
+                      borderRadius: "3px",
+                    }}
+                  >
+                    {user.id}
+                  </span>
+                </td>
                 <td>{user.username}</td>
                 <td>
                   {user.firstName} {user.lastName}
@@ -99,7 +113,12 @@ export function UserManager({
                     </button>
                     <button
                       className="btn-icon btn-delete"
-                      onClick={() => onDelete(user.id!)}
+                      onClick={() => {
+                        // ✅ Add logging to debug
+                        console.log("🗑️ Attempting to delete user:", user);
+                        console.log("🗑️ User ID:", user.id, typeof user.id);
+                        onDelete(user.id);
+                      }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -113,4 +132,5 @@ export function UserManager({
     </>
   );
 }
+
 export default UserManager;

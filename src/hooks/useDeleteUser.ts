@@ -51,9 +51,6 @@ export const useDeleteUser = () => {
 
         return response.data;
       } catch (error: any) {
-        console.error("❌ Delete user API error:", error);
-        console.error("❌ Full error object:", error);
-
         // ✅ Handle different types of errors
         if (error.message?.includes("Authentication")) {
           throw error; // Re-throw authentication errors as-is

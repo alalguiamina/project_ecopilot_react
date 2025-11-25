@@ -40,10 +40,6 @@ interface OrganisationPageProps {
   user: BackendUser; // current logged-in user (do not shadow with other vars)
 }
 
-// Check your localStorage tokens
-console.log("@Access Token:", localStorage.getItem("authToken"));
-console.log("@Refresh Token:", localStorage.getItem("refreshToken"));
-
 const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   const navigate = useNavigate();
   const handleLogout = () => navigate("/");
@@ -157,9 +153,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
       password: undefined,
     };
 
-    // ✅ Debug log to check ID mapping
-    console.log("🔄 Backend user:", u.id, "mapped to UI user:", mapped.id);
-
     return mapped;
   };
 
@@ -180,8 +173,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   // ---- Handlers that call backend ----
 
   const handleAddUser = async (payload: CreateUserRequest) => {
-    console.log("🔍 Received payload in parent:", payload);
-
     createUser.mutate(payload, {
       onSuccess: () => {
         setNewUser({
@@ -196,7 +187,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
         setIsAddDialogOpen(false);
       },
       onError: (err) => {
-        console.error("Create user failed", err);
         alert("Failed to create user");
       },
     });
@@ -231,7 +221,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
           setIsEditDialogOpen(false);
         },
         onError: (err) => {
-          console.error("Update user failed", err);
           alert("Failed to update user");
         },
       },
@@ -239,15 +228,9 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   };
 
   const handleDeleteUser = async (userId: number) => {
-    console.log("🗑️ Delete handler called with userId:", userId, typeof userId);
-
     // Find the user in our local state to verify
     const userToDelete = uiUsers.find((u) => u.id === userId);
     const backendUser = backendUsers.find((u) => u.id === userId);
-
-    console.log("🔍 Found UI user:", userToDelete);
-    console.log("🔍 Found backend user:", backendUser);
-
     if (!userToDelete) {
       alert("User not found in local data!");
       return;
@@ -259,12 +242,9 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
       )
     ) {
       try {
-        console.log("🚀 Calling deleteUser.mutateAsync with:", userId);
         await deleteUser.mutateAsync(userId);
         alert("User deleted successfully!");
       } catch (error: any) {
-        console.error("Error deleting user:", error);
-
         // ✅ Show specific error message to user
         if (error.message?.includes("Authentication")) {
           alert("❌ Authentication error: " + error.message);
@@ -313,14 +293,36 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
     });
   };
 
-  const handleDeleteGroup = (id: number) => {
-    if (!window.confirm("Supprimer ce groupe ?")) return;
-    deleteSiteGroup.mutate(id, {
-      onError: (err: any) => {
-        console.error("Delete group failed", err);
-        alert("Failed to delete group");
-      },
-    });
+  const handleDeleteGroup = async (id: number) => {
+    // Find the site to show proper confirmation
+    const siteToDelete = sites.find((s) => s.id === id);
+    const siteName = siteToDelete?.name || `Site ${id}`;
+
+    if (
+      !window.confirm(
+        `Êtes-vous sûr de vouloir supprimer le site "${siteName}" ?`,
+      )
+    )
+      return;
+
+    try {
+      console.log("🚀 Calling deleteSiteGroup.mutateAsync with:", id);
+      await deleteSiteGroup.mutateAsync(id);
+      alert(`Site "${siteName}" supprimé avec succès!`);
+    } catch (error: any) {
+      console.error("Error deleting site:", error);
+
+      // ✅ Show specific error message to user
+      if (error.message?.includes("Authentication")) {
+        alert("❌ Authentication error: " + error.message);
+      } else if (error.message?.includes("permission")) {
+        alert("❌ Permission error: " + error.message);
+      } else {
+        alert(
+          "❌ Failed to delete site: " + (error.message || "Unknown error"),
+        );
+      }
+    }
   };
 
   const formatSiteGroupField = createEntityFormatter(sites, uiUsers as any);
@@ -476,9 +478,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
                   data={sites as any}
                   onEdit={handleEditSite}
                   onDelete={(site: any) => {
-                    alert(
-                      `Delete site ${site.name} not implemented — implement useDeleteSite and wire it.`,
-                    );
+                    handleDeleteGroup(site.id);
                   }}
                   extraActionButton={
                     <button

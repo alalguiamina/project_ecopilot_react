@@ -114,9 +114,6 @@ export function UserManager({
                     <button
                       className="btn-icon btn-delete"
                       onClick={() => {
-                        // ✅ Add logging to debug
-                        console.log("🗑️ Attempting to delete user:", user);
-                        console.log("🗑️ User ID:", user.id, typeof user.id);
                         onDelete(user.id);
                       }}
                     >

@@ -341,6 +341,75 @@
   transform: none;
 }
 
+.poste-id {
+  font-size: 12px;
+  color: #6b7280;
+  margin-left: 8px;
+}
+
+.indicateurs-error {
+  margin: 16px;
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+}
+
+.error-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.error-icon {
+  color: #dc2626;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.error-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.error-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.error-message {
+  font-size: 13px;
+  color: #991b1b;
+}
+
+.error-poste {
+  font-size: 12px;
+  color: #7f1d1d;
+  font-style: italic;
+}
+
+.retry-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.retry-button:hover {
+  background: #b91c1c;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .config-dialog {

@@ -39,3 +39,15 @@ export type {
   TypeIndicateur,
   TypeIndicateursErrorResponse,
 } from "../types/typeIndicateurs";
+// Export types from postesEmission
+export type {
+  PosteEmission,
+  PostesEmissionErrorResponse,
+} from "../types/postesEmission";
+
+// Export types from postesIndicateurs
+export type {
+  PosteIndicateur,
+  PosteInfo,
+  PosteIndicateursErrorResponse,
+} from "../types/postesIndicateurs";

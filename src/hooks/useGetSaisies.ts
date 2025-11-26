@@ -58,7 +58,7 @@ export const useGetSaisies = (options: UseGetSaisiesOptions = {}) => {
       );
       return response.data;
     },
-    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
+    staleTime: 0, // Always fetch fresh data
     ...queryOptions,
   });
 };

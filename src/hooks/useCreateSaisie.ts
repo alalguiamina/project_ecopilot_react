@@ -1,4 +1,8 @@
-import { useMutation, UseMutationOptions } from "@tanstack/react-query";
+import {
+  useMutation,
+  UseMutationOptions,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { fetchClient } from "../API/fetchClient";
 import type {
   CreateSaisieRequest,
@@ -13,6 +17,8 @@ interface UseCreateSaisieOptions
   > {}
 
 export const useCreateSaisie = (options: UseCreateSaisieOptions = {}) => {
+  const queryClient = useQueryClient();
+
   return useMutation<Saisie, Error, CreateSaisieRequest>({
     mutationFn: async (data: CreateSaisieRequest): Promise<Saisie> => {
       console.log("[useCreateSaisie] Creating saisie with data:", data);
@@ -51,6 +57,12 @@ export const useCreateSaisie = (options: UseCreateSaisieOptions = {}) => {
         response.data,
       );
       return response.data;
+    },
+    onSuccess: (data) => {
+      // Invalidate and refetch saisies queries
+      queryClient.invalidateQueries({ queryKey: ["saisies"] });
+      // Add the new saisie to cache
+      queryClient.setQueryData(["saisie", data.id], data);
     },
     ...options,
   });

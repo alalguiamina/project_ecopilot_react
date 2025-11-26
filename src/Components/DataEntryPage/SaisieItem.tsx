@@ -1,5 +1,16 @@
 import React from "react";
-import { Calendar, User, Edit, Eye, Check, X } from "lucide-react";
+import {
+  Calendar,
+  User,
+  Edit,
+  Eye,
+  Check,
+  X,
+  Clock,
+  CheckCircle,
+  XCircle,
+  RotateCcw,
+} from "lucide-react";
 import type { Site } from "../../types/site";
 import type { Saisie } from "../../types/saisie";
 
@@ -71,19 +82,19 @@ const SaisieItem: React.FC<SaisieItemProps> = ({
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string): React.ReactNode => {
     switch (status) {
       case "en_attente":
-        return "⏳";
+        return <Clock size={14} />;
       case "valide_partiellement":
-        return "🔄";
+        return <RotateCcw size={14} />;
       case "valide":
-        return "✅";
+        return <CheckCircle size={14} />;
       case "refuse":
       case "rejete":
-        return "❌";
+        return <XCircle size={14} />;
       default:
-        return "❓";
+        return null;
     }
   };
 

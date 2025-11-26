@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Clock, CheckCircle, XCircle } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Database, Building2 } from "lucide-react";
 import { User } from "../../App";
 import { useGetSites } from "../../hooks/useGetSites";
 import { useGetUsers } from "../../hooks/useGetUsers";
@@ -287,9 +287,9 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
               sitesError &&
               fallbackSites.length > 0 && (
                 <div className="fallback-notice">
-                  <p>📋 Affichage des sites assignés (informations limitées)</p>
+                  <p> Affichage des sites assignés (informations limitées)</p>
                   <p>
-                    ⚠️ Configuration des indicateurs non disponible - contactez
+                    Configuration des indicateurs non disponible - contactez
                     votre administrateur
                   </p>
                 </div>
@@ -339,7 +339,9 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
             <div className="tab-content">
               {userSites.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-state-icon">🏢</div>
+                  <div className="empty-state-icon">
+                    <Building2 size={48} />
+                  </div>
                   <h2 className="empty-state-title">Aucun site disponible</h2>
                   <p className="empty-state-message">
                     {user.role === "agent"
@@ -353,7 +355,9 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
                 // Show site creation interface when no saisies exist
                 <div className="sites-creation">
                   <div className="empty-state">
-                    <div className="empty-state-icon">📊</div>
+                    <div className="empty-state-icon">
+                      <Database size={48} />
+                    </div>
                     <h2 className="empty-state-title">Aucune saisie trouvée</h2>
                     <p className="empty-state-message">
                       Créez votre première saisie en sélectionnant un site
@@ -383,11 +387,13 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
               ) : groupedSaisies.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon">
-                    {activeTab === "en-cours"
-                      ? "⏳"
-                      : activeTab === "validees"
-                        ? "✅"
-                        : "❌"}
+                    {activeTab === "en-cours" ? (
+                      <Clock size={14} />
+                    ) : activeTab === "validees" ? (
+                      <CheckCircle size={14} />
+                    ) : (
+                      <XCircle size={14} />
+                    )}
                   </div>
                   <h2 className="empty-state-title">
                     {activeTab === "en-cours"

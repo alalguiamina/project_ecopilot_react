@@ -1,7 +1,12 @@
 export interface TypeIndicateur {
   id: number;
-  name: string;
-  description: string;
+  code: string;
+  libelle: string;
+  unite_default: string;
+  poste: {
+    id: number;
+    name: string;
+  };
 }
 
 export interface TypeIndicateursErrorResponse {

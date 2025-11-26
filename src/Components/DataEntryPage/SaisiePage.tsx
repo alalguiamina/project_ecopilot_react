@@ -1,13 +1,12 @@
-import React, { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
 import { User } from "../../App";
 import { useGetSites } from "../../hooks/useGetSites";
 import { useGetUsers } from "../../hooks/useGetUsers";
-import { useGetUsersBySite } from "../../hooks/useGetUsersBySite";
 import type { Site } from "../../types/site";
 import Sidebar from "../Sidebar/Sidebar";
 import Topbar from "../Topbar/Topbar";
 import SiteCard from "./SiteCard";
+import DataEntryDialog from "./DataEntryDialog";
 import "./SaisiePage.css";
 
 interface SaisiePageProps {
@@ -23,7 +22,8 @@ interface ValidatorInfo {
 }
 
 export const SaisiePage = ({ user }: SaisiePageProps) => {
-  const navigate = useNavigate();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
   // Logout handler
   const handleLogout = () => {
@@ -130,8 +130,16 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
   };
 
   const handleSaisieClick = (siteId: number) => {
-    // Navigate to the actual data entry interface
-    navigate(`/data-entry/site/${siteId}`);
+    const site = userSites.find((s) => s.id === siteId);
+    if (site) {
+      setSelectedSite(site);
+      setIsDialogOpen(true);
+    }
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setSelectedSite(null);
   };
 
   if (
@@ -232,6 +240,16 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
           </div>
         </main>
       </div>
+
+      {/* Data Entry Dialog */}
+      {selectedSite && (
+        <DataEntryDialog
+          isOpen={isDialogOpen}
+          onClose={handleDialogClose}
+          site={selectedSite}
+          userRole={user.role}
+        />
+      )}
     </div>
   );
 };

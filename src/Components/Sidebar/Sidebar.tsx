@@ -26,6 +26,7 @@ type MenuItem = {
   path?: string;
   children?: MenuItem[];
   adminOnly?: boolean;
+  allowedRoles?: string[];
 };
 
 const Sidebar = ({ user }: SidebarProps) => {
@@ -53,13 +54,15 @@ const Sidebar = ({ user }: SidebarProps) => {
           icon: validationIcon,
           color: "#d92020ff",
           path: "/data-entry/canevas",
+          allowedRoles: ["admin", "super_user", "user"],
         },
         {
-          id: "validation",
+          id: "saisie",
           label: "Saisie de Données",
           icon: canevasIcon,
           color: "#1063d7ff",
           path: "/data-entry/validation",
+          allowedRoles: ["admin", "agent"],
         },
       ],
     },
@@ -110,15 +113,35 @@ const Sidebar = ({ user }: SidebarProps) => {
 
   // normalize user role for checks
   const userRole = (user?.role ?? "").toString().toLowerCase().trim();
-  const isAdmin =
-    userRole === "admin" ||
-    userRole === "super_user" ||
-    userRole === "administrator";
+  const isAdmin = userRole === "admin" || userRole === "administrator";
 
-  // Filter menu items based on user role
-  const filteredMenuItems = menuItems.filter(
-    (item) => !item.adminOnly || isAdmin,
-  );
+  // Check if user has access to a menu item
+  const hasAccess = (item: MenuItem): boolean => {
+    // Check adminOnly flag
+    if (item.adminOnly && !isAdmin) {
+      return false;
+    }
+
+    // Check allowedRoles if specified
+    if (item.allowedRoles && item.allowedRoles.length > 0) {
+      return item.allowedRoles.includes(user?.role || "");
+    }
+
+    // Default: allow access if no restrictions
+    return true;
+  };
+
+  // Filter menu items and their children based on user role
+  const filteredMenuItems = menuItems
+    .filter(hasAccess)
+    .map((item) => ({
+      ...item,
+      children: item.children?.filter(hasAccess),
+    }))
+    .filter((item) => {
+      // Keep items that have no children, or have at least one visible child
+      return !item.children || item.children.length > 0;
+    });
 
   // determine active path (safe for optional path)
   const isActive = (path?: string) => !!path && location.pathname === path;

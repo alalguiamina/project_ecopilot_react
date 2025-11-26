@@ -46,7 +46,7 @@ const SiteCard: React.FC<SiteCardProps> = ({
     switch (role) {
       case "user":
         return "Utilisateur";
-      case "super_user":
+      case "superuser":
         return "Super Utilisateur";
       case "admin":
         return "Administrateur";

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import "./CanevasPage.css";
 import Sidebar from "../Sidebar/Sidebar";
-import { User } from "App";
+import { User } from "../../App";
 import { useNavigate } from "react-router-dom";
 import { usePageTitle } from "hooks/usePageTitle";
 import Topbar from "Components/Topbar/Topbar";
@@ -22,7 +22,7 @@ interface ValidatorInfo {
   role: string;
 }
 
-export const CanevasPage = ({ user }: { user?: User }) => {
+export const CanevasPage = ({ user }: { user: User }) => {
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "en-cours" | "validees" | "rejetees"
@@ -31,55 +31,163 @@ export const CanevasPage = ({ user }: { user?: User }) => {
   const navigate = useNavigate();
   const handleLogout = () => navigate("/");
 
-  // Fetch all saisies
+  // Fetch sites and users based on user role
+  const {
+    data: allSites,
+    isLoading: sitesLoading,
+    error: sitesError,
+  } = useGetSites();
+  const { data: allUsers } = useGetUsers({
+    enabled: user?.role === "admin", // Only admins need all users data
+  });
+
+  // For non-admin users, if sites API fails, create minimal site objects from user.sites
+  const fallbackSites = useMemo((): Site[] => {
+    if (
+      (user?.role === "user" || user?.role === "super_user") &&
+      sitesError &&
+      user.sites
+    ) {
+      return user.sites.map(
+        (siteId): Site => ({
+          id: siteId,
+          name: `Site ${siteId}`,
+          location: "Localisation non disponible",
+          require_double_validation: false, // Default assumption
+          config_json: [], // Empty configuration - user will need admin to configure
+        }),
+      );
+    }
+    return [];
+  }, [user, sitesError]);
+
+  // Filter sites based on user role
+  const userSites = useMemo((): Site[] => {
+    // Use fallback sites for non-admin users if main API failed
+    const sitesToUse: Site[] =
+      (user?.role === "user" || user?.role === "super_user") && sitesError
+        ? fallbackSites
+        : allSites || [];
+
+    // Admins see all sites
+    if (user?.role === "admin") {
+      return sitesToUse;
+    }
+
+    // Users and super_users see only their assigned sites
+    if (user?.role === "user" || user?.role === "super_user") {
+      return sitesToUse.filter((site: Site) => user.sites?.includes(site.id));
+    }
+
+    return [];
+  }, [allSites, fallbackSites, user, sitesError]);
+
+  // Fetch all saisies for the user's accessible sites
   const {
     data: allSaisies,
     isLoading: saisiesLoading,
     error: saisiesError,
     refetch: refetchSaisies,
-  } = useGetSaisies();
-
-  // Fetch sites and users
-  const { data: allSites } = useGetSites();
-  const { data: allUsers } = useGetUsers({
-    enabled: true, // Always fetch users to show proper names in cards
+  } = useGetSaisies({
+    enabled: Boolean(userSites.length > 0 && user?.role),
   });
 
   // Filter saisies based on user role and permissions
   const userSaisies = useMemo(() => {
-    if (!allSaisies || !user) return [];
+    if (!allSaisies || !user) {
+      console.log("[CanevasPage] No saisies or user available");
+      return [];
+    }
+
+    console.log("[CanevasPage] Filtering saisies:", {
+      totalSaisies: allSaisies.length,
+      userRole: user.role,
+      userSites: user.sites,
+      saisiesPreview: allSaisies
+        .slice(0, 3)
+        .map((s) => ({ id: s.id, site: s.site, statut: s.statut })),
+    });
 
     // Admins see all saisies
     if (user.role === "admin") {
+      console.log("[CanevasPage] Admin user - showing all saisies");
       return allSaisies;
     }
 
-    // Other users see only saisies for their assigned sites
-    return allSaisies.filter((saisie: Saisie) =>
-      user.sites?.includes(saisie.site),
-    );
+    // Users and super_users see only saisies for their assigned sites
+    if (user.role === "user" || user.role === "super_user") {
+      if (!user.sites || user.sites.length === 0) {
+        console.log("[CanevasPage] User has no assigned sites");
+        return [];
+      }
+
+      const filteredSaisies = allSaisies.filter((saisie: Saisie) =>
+        user.sites?.includes(saisie.site),
+      );
+
+      console.log("[CanevasPage] Filtered saisies for user:", {
+        originalCount: allSaisies.length,
+        filteredCount: filteredSaisies.length,
+        userSites: user.sites,
+      });
+
+      return filteredSaisies;
+    }
+
+    // If the user has any other role, they shouldn't see anything
+    console.log("[CanevasPage] User role not authorized:", user.role);
+    return [];
   }, [allSaisies, user]);
 
   // Filter saisies by status and user's accessible sites
   const filteredSaisies = useMemo(() => {
-    if (!userSaisies) return { enCours: [], validees: [], rejetees: [] };
+    if (!userSaisies) {
+      console.log("[CanevasPage] No userSaisies available");
+      return { enCours: [], validees: [], rejetees: [] };
+    }
 
-    return {
+    const result = {
       enCours: userSaisies.filter(
-        (saisie) =>
+        (saisie: Saisie) =>
           saisie.statut === "en_attente" ||
           saisie.statut === "valide_partiellement",
       ),
-      validees: userSaisies.filter((saisie) => saisie.statut === "valide"),
+      validees: userSaisies.filter(
+        (saisie: Saisie) => saisie.statut === "valide",
+      ),
       rejetees: userSaisies.filter(
-        (saisie) => saisie.statut === "refuse" || saisie.statut === "rejete",
+        (saisie: Saisie) =>
+          saisie.statut === "refuse" || saisie.statut === "rejete",
       ),
     };
+
+    console.log("[CanevasPage] Filtered saisies by status:", {
+      totalUserSaisies: userSaisies.length,
+      enCours: result.enCours.length,
+      validees: result.validees.length,
+      rejetees: result.rejetees.length,
+      saisiesStatuses: userSaisies.map((s) => ({ id: s.id, statut: s.statut })),
+    });
+
+    return result;
   }, [userSaisies]);
 
   // Get site information - moved before groupedSaisies to fix initialization error
   const getSiteById = (siteId: number): Site | undefined => {
-    return allSites?.find((site) => site.id === siteId);
+    if (!allSites || allSites.length === 0) {
+      console.log(
+        `[CanevasPage] No sites loaded yet when looking for site ${siteId}`,
+      );
+      return undefined;
+    }
+    const site = allSites.find((site) => site.id === siteId);
+    if (!site) {
+      console.log(
+        `[CanevasPage] Site ${siteId} not found in available sites:`,
+        allSites.map((s) => ({ id: s.id, name: s.name })),
+      );
+    }
+    return site;
   };
 
   // Group saisies by site for current tab
@@ -93,19 +201,52 @@ export const CanevasPage = ({ user }: { user?: User }) => {
             : "rejetees"
       ];
 
+    console.log("[CanevasPage] Grouping saisies:", {
+      activeTab,
+      currentSaisiesCount: currentSaisies.length,
+      currentSaisies: currentSaisies.map((s) => ({
+        id: s.id,
+        site: s.site,
+        statut: s.statut,
+      })),
+      availableSites: allSites?.map((s) => ({ id: s.id, name: s.name })),
+    });
+
     const grouped: { [siteId: number]: { site: Site; saisies: Saisie[] } } = {};
 
-    currentSaisies.forEach((saisie) => {
+    currentSaisies.forEach((saisie: Saisie) => {
       const site = getSiteById(saisie.site);
+      console.log(
+        `[CanevasPage] Processing saisie ${saisie.id} for site ${saisie.site}:`,
+        {
+          siteFound: !!site,
+          siteName: site?.name,
+        },
+      );
+
       if (site) {
         if (!grouped[saisie.site]) {
           grouped[saisie.site] = { site, saisies: [] };
         }
         grouped[saisie.site].saisies.push(saisie);
+      } else {
+        console.warn(
+          `[CanevasPage] Site ${saisie.site} not found for saisie ${saisie.id}`,
+        );
       }
     });
 
-    return Object.values(grouped);
+    const result = Object.values(grouped);
+    console.log("[CanevasPage] Grouped result:", {
+      groupCount: result.length,
+      groups: result.map((g) => ({
+        siteId: g.site.id,
+        siteName: g.site.name,
+        saisiesCount: g.saisies.length,
+      })),
+    });
+
+    return result;
   }, [filteredSaisies, activeTab, allSites]);
 
   // Get user information by ID

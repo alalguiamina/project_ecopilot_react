@@ -69,28 +69,17 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       timestamp: new Date().toISOString(),
     });
 
-    if (isOpen) {
-      console.log("[DataEntryDialog] Dialog opened - current form state:", {
-        indicatorData: Object.keys(indicatorData).length,
-        existingSaisie: existingSaisie?.id,
-        month: selectedMonth,
-        year: selectedYear,
-      });
-    } else {
+    if (!isOpen) {
       console.log("[DataEntryDialog] Dialog closed - clearing form data");
       // Clear form data when dialog closes to prevent stale data on reopen
       setIndicatorData({});
       setExistingSaisie(null);
       setIsManualDateChange(false);
+      // Reset to current month/year when closing
+      setSelectedMonth(new Date().getMonth() + 1);
+      setSelectedYear(new Date().getFullYear());
     }
-  }, [
-    isOpen,
-    site?.id,
-    indicatorData,
-    existingSaisie,
-    selectedMonth,
-    selectedYear,
-  ]);
+  }, [isOpen]);
 
   // Query client for cache invalidation
   const queryClient = useQueryClient();
@@ -235,6 +224,10 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       saisiesLoading,
       timestamp: new Date().toISOString(),
     });
+
+    // Clear data first to prevent stale data
+    setIndicatorData({});
+    setExistingSaisie(null);
 
     if (
       !isOpen ||

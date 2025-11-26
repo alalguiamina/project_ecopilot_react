@@ -88,28 +88,72 @@ function App() {
     password: string,
   ): Promise<void> => {
     try {
+      console.log("[App] Starting login process for:", username);
+
+      // Clear any existing tokens first
+      [
+        "authToken",
+        "ACCESS_TOKEN",
+        "access_token",
+        "auth_token",
+        "refreshToken",
+        "REFRESH_TOKEN",
+        "refresh_token",
+      ].forEach((k) => localStorage.removeItem(k));
+
       // perform login (gets tokens)
       const resp = await loginMutation.mutateAsync({ username, password });
+
+      console.log("[App] Login response received:", {
+        hasAccess: !!resp.access,
+        hasRefresh: !!resp.refresh,
+      });
 
       // store tokens under common keys so fetchClient can pick them up
       const access = resp.access ?? resp.token ?? resp.access_token;
       const refresh = resp.refresh ?? resp.refresh_token;
+
       if (access) {
         localStorage.setItem("authToken", access);
         localStorage.setItem(ACCESS_TOKEN ?? "ACCESS_TOKEN", access);
+        console.log("[App] Access token stored");
       }
+
       if (refresh) {
         localStorage.setItem("refreshToken", refresh);
         localStorage.setItem(REFRESH_TOKEN ?? "REFRESH_TOKEN", refresh);
+        console.log("[App] Refresh token stored");
+      }
 
-        const userRes = await refetch();
-        if (userRes.data) {
-          setUser(userRes.data);
-          (window as any).__CURRENT_USER__ = userRes.data;
-        }
+      // Always try to fetch user data after successful login
+      console.log("[App] Fetching user data after login");
+      const userRes = await refetch();
+      if (userRes.data) {
+        console.log("[App] User data fetched successfully:", {
+          id: userRes.data.id,
+          username: userRes.data.username,
+          role: userRes.data.role,
+          sites: userRes.data.sites,
+        });
+        setUser(userRes.data);
+        (window as any).__CURRENT_USER__ = userRes.data;
+      } else {
+        console.error("[App] Failed to fetch user data after login");
+        throw new Error("Failed to fetch user data after login");
       }
     } catch (err: any) {
       console.error("Login failed in App.handleLogin:", err);
+      // Clear tokens on login failure
+      [
+        "authToken",
+        "ACCESS_TOKEN",
+        "access_token",
+        "auth_token",
+        "refreshToken",
+        "REFRESH_TOKEN",
+        "refresh_token",
+      ].forEach((k) => localStorage.removeItem(k));
+      setUser(null);
       throw err;
     }
   };
@@ -185,7 +229,10 @@ function App() {
             <Route
               path="/data-entry/canevas"
               element={
-                <ProtectedRoute user={user}>
+                <ProtectedRoute
+                  user={user}
+                  requiredRole={["user", "superuser", "admin"]}
+                >
                   <CanevasPage user={user!} />
                 </ProtectedRoute>
               }

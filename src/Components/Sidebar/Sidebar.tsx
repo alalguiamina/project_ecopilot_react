@@ -8,6 +8,8 @@ import chartIcon from "../../Assets/chart.png";
 import targetIcon from "../../Assets/target.png";
 import reportIcon from "../../Assets/report.png";
 import settingsIcon from "../../Assets/settings.png";
+import canevasIcon from "../../Assets/canevas.png";
+import validationIcon from "../../Assets/validation.png";
 import organisationIcon from "../../Assets/organisation.png";
 import logo from "../../Assets/logo.png";
 import type { User } from "../../App";
@@ -48,15 +50,15 @@ const Sidebar = ({ user }: SidebarProps) => {
         {
           id: "canevas",
           label: "Canevas et validation",
-          icon: canevasIcon,
-          color: "#1063d7ff",
+          icon: validationIcon,
+          color: "#d92020ff",
           path: "/data-entry/canevas",
         },
         {
           id: "validation",
           label: "Saisie de Données",
-          icon: penIcon,
-          color: "#555",
+          icon: canevasIcon,
+          color: "#1063d7ff",
           path: "/data-entry/validation",
         },
       ],

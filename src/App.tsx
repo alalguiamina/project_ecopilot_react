@@ -20,13 +20,12 @@ import { useGetCurrentUser } from "./hooks";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants";
 
 import type { User as BackendUser } from "./types/user";
-
-import { ValidationPage } from "Components/DataEntryPage/ValidationPage";
 import Login from "Components/Login/Login";
 import Sidebar from "./Components/Sidebar/Sidebar";
 
 import CarbonFootprintPage from "Components/CarbonFootprintPage/CarbonFootprintPage";
 import CanevasPage from "Components/DataEntryPage/CanevasPage";
+import SaisiePage from "Components/DataEntryPage/SaisiePage";
 
 export type UserRole = "agent" | "user" | "super_user" | "admin";
 
@@ -194,8 +193,8 @@ function App() {
             <Route
               path="/data-entry/validation"
               element={
-                <ProtectedRoute user={user}>
-                  <ValidationPage user={user!} />
+                <ProtectedRoute user={user} requiredRole={["agent", "admin"]}>
+                  <SaisiePage user={user!} />
                 </ProtectedRoute>
               }
             />

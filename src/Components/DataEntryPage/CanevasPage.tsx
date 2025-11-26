@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { usePageTitle } from "hooks/usePageTitle";
 import Topbar from "Components/Topbar/Topbar";
 import { ConfigDialog } from "../ConfigDialog/ConfigDialog";
-import { Settings, RefreshCw } from "lucide-react";
+import { Settings, RefreshCw, Clock, CheckCircle, XCircle } from "lucide-react";
 import { useGetSites } from "../../hooks/useGetSites";
 import { useGetUsers } from "../../hooks/useGetUsers";
 import { useGetSaisies } from "../../hooks/useGetSaisies";
@@ -24,13 +24,9 @@ interface ValidatorInfo {
 
 export const CanevasPage = ({ user }: { user?: User }) => {
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState<number | undefined>(
-    undefined,
-  );
-  const [selectedYear, setSelectedYear] = useState<number | undefined>(
-    undefined,
-  );
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<
+    "en-cours" | "validees" | "rejetees"
+  >("en-cours");
 
   const navigate = useNavigate();
   const handleLogout = () => navigate("/");
@@ -41,10 +37,7 @@ export const CanevasPage = ({ user }: { user?: User }) => {
     isLoading: saisiesLoading,
     error: saisiesError,
     refetch: refetchSaisies,
-  } = useGetSaisies({
-    mois: selectedMonth,
-    annee: selectedYear,
-  });
+  } = useGetSaisies();
 
   // Fetch sites and users
   const { data: allSites } = useGetSites();
@@ -58,47 +51,62 @@ export const CanevasPage = ({ user }: { user?: User }) => {
 
     // Admins see all saisies
     if (user.role === "admin") {
-      let filtered = allSaisies;
-
-      // Apply status filter if selected
-      if (selectedStatus) {
-        filtered = filtered.filter(
-          (saisie) => saisie.statut === selectedStatus,
-        );
-      }
-
-      return filtered;
+      return allSaisies;
     }
 
     // Other users see only saisies for their assigned sites
-    let filtered = allSaisies.filter((saisie: Saisie) =>
+    return allSaisies.filter((saisie: Saisie) =>
       user.sites?.includes(saisie.site),
     );
+  }, [allSaisies, user]);
 
-    // Apply status filter if selected
-    if (selectedStatus) {
-      filtered = filtered.filter((saisie) => saisie.statut === selectedStatus);
-    }
+  // Filter saisies by status and user's accessible sites
+  const filteredSaisies = useMemo(() => {
+    if (!userSaisies) return { enCours: [], validees: [], rejetees: [] };
 
-    return filtered;
-  }, [allSaisies, user, selectedStatus]);
-
-  // Group saisies by site
-  const saisiesBySite = useMemo(() => {
-    const grouped: { [siteId: number]: Saisie[] } = {};
-    userSaisies.forEach((saisie) => {
-      if (!grouped[saisie.site]) {
-        grouped[saisie.site] = [];
-      }
-      grouped[saisie.site].push(saisie);
-    });
-    return grouped;
+    return {
+      enCours: userSaisies.filter(
+        (saisie) =>
+          saisie.statut === "en_attente" ||
+          saisie.statut === "valide_partiellement",
+      ),
+      validees: userSaisies.filter((saisie) => saisie.statut === "valide"),
+      rejetees: userSaisies.filter(
+        (saisie) => saisie.statut === "refuse" || saisie.statut === "rejete",
+      ),
+    };
   }, [userSaisies]);
 
-  // Get site information
+  // Get site information - moved before groupedSaisies to fix initialization error
   const getSiteById = (siteId: number): Site | undefined => {
     return allSites?.find((site) => site.id === siteId);
   };
+
+  // Group saisies by site for current tab
+  const groupedSaisies = useMemo(() => {
+    const currentSaisies =
+      filteredSaisies[
+        activeTab === "en-cours"
+          ? "enCours"
+          : activeTab === "validees"
+            ? "validees"
+            : "rejetees"
+      ];
+
+    const grouped: { [siteId: number]: { site: Site; saisies: Saisie[] } } = {};
+
+    currentSaisies.forEach((saisie) => {
+      const site = getSiteById(saisie.site);
+      if (site) {
+        if (!grouped[saisie.site]) {
+          grouped[saisie.site] = { site, saisies: [] };
+        }
+        grouped[saisie.site].saisies.push(saisie);
+      }
+    });
+
+    return Object.values(grouped);
+  }, [filteredSaisies, activeTab, allSites]);
 
   // Get user information by ID
   const getUserById = (userId: number) => {
@@ -128,22 +136,21 @@ export const CanevasPage = ({ user }: { user?: User }) => {
     return [];
   };
 
-  const generateYearOptions = () => {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let i = currentYear - 5; i <= currentYear + 1; i++) {
-      years.push(i);
+  const getStatusDisplayName = (status: string) => {
+    switch (status) {
+      case "en_attente":
+        return "En attente";
+      case "valide_partiellement":
+        return "Validé partiellement";
+      case "valide":
+        return "Validé";
+      case "refuse":
+      case "rejete":
+        return "Rejeté";
+      default:
+        return status;
     }
-    return years;
   };
-
-  const getStatusOptions = () => [
-    { value: "", label: "Tous les statuts" },
-    { value: "en_attente", label: "En attente" },
-    { value: "valide_partiellement", label: "Validé partiellement" },
-    { value: "valide", label: "Validé" },
-    { value: "rejete", label: "Rejeté" },
-  ];
 
   const pageTitle = usePageTitle();
   const topbarProps = {
@@ -188,113 +195,113 @@ export const CanevasPage = ({ user }: { user?: User }) => {
             </div>
           </header>
 
-          <div className="saisie-body">
-            {/* FILTERS */}
-            <div className="filters-section">
-              <div className="filters-row">
-                <div className="filter-group">
-                  <label htmlFor="month-filter">Mois</label>
-                  <select
-                    id="month-filter"
-                    value={selectedMonth || ""}
-                    onChange={(e) =>
-                      setSelectedMonth(
-                        e.target.value ? Number(e.target.value) : undefined,
-                      )
-                    }
-                  >
-                    <option value="">Tous les mois</option>
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {new Date(2000, i, 1).toLocaleDateString("fr-FR", {
-                          month: "long",
-                        })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-group">
-                  <label htmlFor="year-filter">Année</label>
-                  <select
-                    id="year-filter"
-                    value={selectedYear || ""}
-                    onChange={(e) =>
-                      setSelectedYear(
-                        e.target.value ? Number(e.target.value) : undefined,
-                      )
-                    }
-                  >
-                    <option value="">Toutes les années</option>
-                    {generateYearOptions().map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-group">
-                  <label htmlFor="status-filter">Statut</label>
-                  <select
-                    id="status-filter"
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                  >
-                    {getStatusOptions().map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+          <div className="saisie-tabs">
+            <div className="tabs-header">
+              <button
+                className={`tab-button ${
+                  activeTab === "en-cours" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("en-cours")}
+              >
+                <Clock className="tab-icon" size={20} />
+                <span className="tab-label">En Cours</span>
+                <span className="tab-count">
+                  {filteredSaisies.enCours.length}
+                </span>
+              </button>
+              <button
+                className={`tab-button ${
+                  activeTab === "validees" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("validees")}
+              >
+                <CheckCircle className="tab-icon" size={20} />
+                <span className="tab-label">Validées</span>
+                <span className="tab-count">
+                  {filteredSaisies.validees.length}
+                </span>
+              </button>
+              <button
+                className={`tab-button ${
+                  activeTab === "rejetees" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("rejetees")}
+              >
+                <XCircle className="tab-icon" size={20} />
+                <span className="tab-label">Rejetées</span>
+                <span className="tab-count">
+                  {filteredSaisies.rejetees.length}
+                </span>
+              </button>
             </div>
 
-            {/* CONTENT */}
-            {saisiesLoading ? (
-              <div className="loading-state">
-                <div className="loading-spinner"></div>
-                <span>Chargement des saisies...</span>
-              </div>
-            ) : saisiesError ? (
-              <div className="error-state">
-                <div className="error-state-title">Erreur de chargement</div>
-                <p>Impossible de charger les saisies. Veuillez réessayer.</p>
-                <button onClick={() => refetchSaisies()}>Réessayer</button>
-              </div>
-            ) : Object.keys(saisiesBySite).length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">📋</div>
-                <h2 className="empty-state-title">Aucune saisie trouvée</h2>
-                <p className="empty-state-message">
-                  Aucune saisie ne correspond aux critères sélectionnés.
-                </p>
-              </div>
-            ) : (
-              <div className="sites-grid">
-                {Object.entries(saisiesBySite).map(([siteId, saisies]) => {
-                  const site = getSiteById(Number(siteId));
-                  const validators = getValidatorsForSite(Number(siteId));
-
-                  if (!site) return null;
-
-                  return saisies.map((saisie) => {
-                    const creatorUser = getUserById(saisie.created_by);
-                    return (
-                      <SaisieCard
-                        key={`${site.id}-${saisie.id}`}
-                        site={site}
-                        saisie={saisie}
-                        validators={validators}
-                        userRole={user?.role || "agent"}
-                        creatorUser={creatorUser}
-                      />
-                    );
-                  });
-                })}
-              </div>
-            )}
+            <div className="tab-content">
+              {saisiesLoading ? (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <span>Chargement des saisies...</span>
+                </div>
+              ) : saisiesError ? (
+                <div className="error-state">
+                  <div className="error-state-title">Erreur de chargement</div>
+                  <p>Impossible de charger les saisies. Veuillez réessayer.</p>
+                  <button onClick={() => refetchSaisies()}>Réessayer</button>
+                </div>
+              ) : groupedSaisies.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">
+                    {activeTab === "en-cours" ? (
+                      <Clock size={48} />
+                    ) : activeTab === "validees" ? (
+                      <CheckCircle size={48} />
+                    ) : (
+                      <XCircle size={48} />
+                    )}
+                  </div>
+                  <h2 className="empty-state-title">
+                    {activeTab === "en-cours"
+                      ? "Aucune saisie en cours"
+                      : activeTab === "validees"
+                        ? "Aucune saisie validée"
+                        : "Aucune saisie rejetée"}
+                  </h2>
+                  <p className="empty-state-message">
+                    {activeTab === "en-cours"
+                      ? "Aucune saisie en attente ou partiellement validée."
+                      : activeTab === "validees"
+                        ? "Aucune saisie n'a encore été validée."
+                        : "Aucune saisie n'a été rejetée."}
+                  </p>
+                </div>
+              ) : (
+                <div className="saisie-groups">
+                  {groupedSaisies.map(({ site, saisies }) => (
+                    <div key={site.id} className="saisie-group">
+                      <div className="group-header">
+                        <h3 className="group-title">{site.name}</h3>
+                        <span className="group-count">
+                          {saisies.length} saisie{saisies.length > 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div className="group-content">
+                        {saisies.map((saisie) => (
+                          <SaisieCard
+                            key={`${site.id}-${saisie.id}`}
+                            site={site}
+                            saisie={saisie}
+                            validators={getValidatorsForSite(site.id)}
+                            userRole={user?.role || "agent"}
+                            creatorUser={
+                              getUserById(saisie.created_by) || undefined
+                            }
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </main>
       </div>

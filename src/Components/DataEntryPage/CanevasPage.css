@@ -755,9 +755,11 @@
 }
 
 .empty-state-icon {
-  font-size: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 1rem;
-  opacity: 0.5;
+  color: #9ca3af;
 }
 
 .empty-state-message {
@@ -1214,5 +1216,290 @@
 
   .date-item {
     font-size: 0.8rem;
+  }
+}
+
+/* ================ TABS STYLES ================ */
+.saisie-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tabs-header {
+  display: flex;
+  background: white;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 0 2rem;
+  flex-shrink: 0;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.tab-button:hover {
+  color: #374151;
+  background-color: #f9fafb;
+}
+
+.tab-button.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  background-color: #f8fafc;
+}
+
+.tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-label {
+  font-weight: 600;
+}
+
+.tab-count {
+  background: #e5e7eb;
+  color: #374151;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.tab-button.active .tab-count {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+/* ================ SAISIE GROUPS ================ */
+.saisie-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.saisie-group {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.group-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.group-count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.group-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ================ SAISIE ITEM ================ */
+.saisie-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: all 0.2s;
+}
+
+.saisie-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.saisie-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.saisie-item-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #374151;
+}
+
+.period {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.saisie-item-status .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.saisie-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.saisie-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.info-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.info-value {
+  color: #374151;
+  font-weight: 600;
+}
+
+.validation-info {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #fef3c7;
+  border-radius: 6px;
+  border: 1px solid #fbbf24;
+}
+
+.validation-badge {
+  color: #92400e;
+  font-weight: 500;
+}
+
+.validation-dates {
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.validation-date {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.validation-date:last-child {
+  margin-bottom: 0;
+}
+
+.validation-label {
+  color: #0369a1;
+  font-weight: 500;
+}
+
+.saisie-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* ================ RESPONSIVE ================ */
+@media (max-width: 768px) {
+  .tabs-header {
+    padding: 0 1rem;
+  }
+
+  .tab-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .tab-content {
+    padding: 1rem;
+  }
+
+  .group-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .group-content {
+    padding: 1rem;
   }
 }

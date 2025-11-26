@@ -1,13 +1,31 @@
-// useGetSiteConfig.ts - Modified version
 import { useQuery } from "@tanstack/react-query";
+import { fetchClient } from "../API/fetchClient";
+
+interface SiteConfigResponse {
+  configs: Array<{
+    poste: number;
+    indicateurs: number[];
+  }>;
+}
 
 export const useGetSiteConfig = (siteId: number | null) => {
   return useQuery({
     queryKey: ["siteConfig", siteId],
-    queryFn: async () => {
-      // Return null for now - config will be empty on first load
-      return { configs: [] };
+    queryFn: async (): Promise<SiteConfigResponse> => {
+      if (!siteId) throw new Error("Site ID is required");
+
+      const resp = await fetchClient<SiteConfigResponse>(
+        `/core/sites/${siteId}/config/`,
+      );
+      if (resp.error || !resp.data) {
+        throw (
+          resp.error ||
+          new Error(`Failed to fetch site configuration for site ${siteId}`)
+        );
+      }
+      return resp.data;
     },
-    enabled: false, // Disable this query for now
+    enabled: Boolean(siteId),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 };

@@ -54,6 +54,11 @@
   font-size: 0.875rem;
 }
 
+.saisie-status {
+  color: #059669;
+  font-weight: 600;
+}
+
 .dialog-close {
   background: none;
   border: none;

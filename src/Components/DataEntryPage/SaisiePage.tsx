@@ -78,6 +78,7 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
           name: `Site ${siteId}`,
           location: "Localisation non disponible",
           require_double_validation: false, // Default assumption
+          config_json: [], // Empty configuration - user will need admin to configure
         }),
       );
     }
@@ -132,6 +133,15 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
   const handleSaisieClick = (siteId: number) => {
     const site = userSites.find((s) => s.id === siteId);
     if (site) {
+      console.log("[SaisiePage] Opening DataEntry for site:", {
+        id: site.id,
+        name: site.name,
+        hasConfig: !!site.config_json,
+        configType: typeof site.config_json,
+        configLength: Array.isArray(site.config_json)
+          ? site.config_json.length
+          : "not array",
+      });
       setSelectedSite(site);
       setIsDialogOpen(true);
     }
@@ -201,6 +211,10 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
               fallbackSites.length > 0 && (
                 <div className="fallback-notice">
                   <p>📋 Affichage des sites assignés (informations limitées)</p>
+                  <p>
+                    ⚠️ Configuration des indicateurs non disponible - contactez
+                    votre administrateur
+                  </p>
                 </div>
               )}
           </header>

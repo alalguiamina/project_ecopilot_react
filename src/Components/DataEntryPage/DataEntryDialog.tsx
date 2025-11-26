@@ -2,8 +2,17 @@ import React, { useState, useEffect, useMemo } from "react";
 import { X, Calendar, Save, FileText, Ban } from "lucide-react";
 import { useGetPostesEmission } from "../../hooks/useGetPostesEmission";
 import { useGetTypeIndicateurs } from "../../hooks/useGetTypeIndicators";
+import { useCreateSaisie } from "../../hooks/useCreateSaisie";
+import { useGetSaisies } from "../../hooks/useGetSaisies";
+import { useUpdateSaisie } from "../../hooks/useUpdateSaisie";
 import type { Site } from "../../types/site";
 import type { TypeIndicateur } from "../../types/typeIndicateurs";
+import type {
+  CreateSaisieRequest,
+  UpdateSaisieRequest,
+  SaisieValeur,
+  Saisie,
+} from "../../types/saisie";
 import "./DataEntryDialog.css";
 
 interface DataEntryDialogProps {
@@ -41,11 +50,47 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
     new Date().getFullYear(),
   );
   const [indicatorData, setIndicatorData] = useState<IndicatorData>({});
-  const [isSaving, setIsSaving] = useState(false);
+  const [existingSaisie, setExistingSaisie] = useState<Saisie | null>(null);
+  const [isManualDateChange, setIsManualDateChange] = useState(false);
 
   // Fetch data
   const { data: postesEmission } = useGetPostesEmission();
   const { data: typeIndicateurs } = useGetTypeIndicateurs();
+
+  // Fetch existing saisies for this site/month/year
+  const { data: existingSaisies } = useGetSaisies({
+    siteId: site?.id,
+    mois: selectedMonth,
+    annee: selectedYear,
+    enabled: Boolean(site?.id && selectedMonth && selectedYear),
+  });
+
+  // Create saisie mutation
+  const createSaisieMutation = useCreateSaisie({
+    onSuccess: (data) => {
+      console.log("Saisie created successfully:", data);
+      alert("Saisie créée avec succès !");
+      onClose();
+    },
+    onError: (error) => {
+      console.error("Error creating saisie:", error);
+      alert(`Erreur lors de la création: ${error.message}`);
+    },
+  });
+
+  // Update saisie mutation
+  const updateSaisieMutation = useUpdateSaisie({
+    onSuccess: (data) => {
+      console.log("Saisie updated successfully:", data);
+      // Show success message but keep dialog open to show the updated data
+      alert("Saisie mise à jour avec succès !");
+      // onClose();
+    },
+    onError: (error) => {
+      console.error("Error updating saisie:", error);
+      alert(`Erreur lors de la mise à jour: ${error.message}`);
+    },
+  });
 
   // Organize indicators by poste
   const posteWithIndicators = useMemo((): PosteWithIndicators[] => {
@@ -92,16 +137,89 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       .filter((item) => item.indicators.length > 0);
   }, [postesEmission, typeIndicateurs, site.config_json]);
 
+  // Check for existing saisie and load data
+  useEffect(() => {
+    console.log("[DataEntryDialog] Existing saisies data:", existingSaisies);
+
+    if (existingSaisies && existingSaisies.length > 0) {
+      const saisie = existingSaisies[0]; // Should only be one per site/month/year
+      console.log("[DataEntryDialog] Loading existing saisie:", saisie);
+
+      setExistingSaisie(saisie);
+
+      // Update month/year to match the loaded saisie (but don't trigger manual change)
+      setSelectedMonth(saisie.mois);
+      setSelectedYear(saisie.annee);
+
+      // Load existing values into the form
+      const newIndicatorData: IndicatorData = {};
+      saisie.valeurs.forEach((valeur) => {
+        newIndicatorData[valeur.type_indicateur] = {
+          value: valeur.valeur.toString(),
+          isDraft: false,
+        };
+      });
+
+      console.log(
+        "[DataEntryDialog] Loading indicator data:",
+        newIndicatorData,
+      );
+      setIndicatorData(newIndicatorData);
+    } else {
+      console.log("[DataEntryDialog] No existing saisies found");
+      setExistingSaisie(null);
+    }
+  }, [existingSaisies]);
+
+  // Handle manual date changes (when user changes month/year selectors)
+  // This will trigger a refetch of saisies for the new date
+  useEffect(() => {
+    if (isOpen && site?.id && isManualDateChange) {
+      // When date changes manually, clear the current data to prepare for new data
+      // The existing saisie detection will reload data if there's a match
+      console.log(
+        "[DataEntryDialog] Manual date change detected, clearing form",
+      );
+      setExistingSaisie(null);
+      setIndicatorData({});
+      setIsManualDateChange(false); // Reset the flag
+    }
+  }, [selectedMonth, selectedYear, site?.id, isOpen, isManualDateChange]);
+
   // Reset form when dialog opens
   useEffect(() => {
     if (isOpen) {
+      console.log(
+        "[DataEntryDialog] Dialog opened, checking for existing data",
+      );
       const currentDate = new Date();
-      setSelectedMonth(currentDate.getMonth() + 1);
-      setSelectedYear(currentDate.getFullYear());
-      setIndicatorData({});
+
+      // Only set to current date if this is a fresh dialog open and no existing data
+      // Wait a bit to see if existing saisies will be loaded
+      const timeout = setTimeout(() => {
+        if (!existingSaisies || existingSaisies.length === 0) {
+          console.log(
+            "[DataEntryDialog] No existing saisies, setting to current date",
+          );
+          setSelectedMonth(currentDate.getMonth() + 1);
+          setSelectedYear(currentDate.getFullYear());
+        }
+      }, 100); // Small delay to allow data to load
+
+      return () => clearTimeout(timeout);
     }
   }, [isOpen]);
 
+  // Separate effect to handle dialog closure cleanup
+  useEffect(() => {
+    if (!isOpen) {
+      // Only clear when dialog is closed
+      console.log("[DataEntryDialog] Dialog closed, clearing state");
+      setIndicatorData({});
+      setExistingSaisie(null);
+      setIsManualDateChange(false);
+    }
+  }, [isOpen]);
   const handleInputChange = (indicatorId: number, value: string) => {
     setIndicatorData((prev) => ({
       ...prev,
@@ -113,27 +231,70 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
   };
 
   const handleSave = async (isDraft = false) => {
-    setIsSaving(true);
-    try {
-      // TODO: Implement API call to save data
-      console.log("Saving data:", {
-        siteId: site.id,
-        month: selectedMonth,
-        year: selectedYear,
-        data: indicatorData,
-        isDraft,
+    if (!site?.id || !selectedMonth || !selectedYear) {
+      alert("Informations manquantes pour la sauvegarde");
+      return;
+    }
+
+    // Prepare the valeurs array
+    const valeurs: SaisieValeur[] = [];
+
+    // Iterate through all configured indicators and collect their values
+    posteWithIndicators.forEach(({ indicators }) => {
+      indicators.forEach((indicator) => {
+        const inputData = indicatorData[indicator.id];
+        if (inputData && inputData.value?.trim()) {
+          const numericValue = parseFloat(inputData.value);
+          if (!isNaN(numericValue)) {
+            valeurs.push({
+              type_indicateur: indicator.id,
+              valeur: numericValue,
+              unite: indicator.unite_default,
+            });
+          }
+        }
       });
+    });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (valeurs.length === 0) {
+      alert("Aucune valeur saisie à enregistrer");
+      return;
+    }
 
-      if (!isDraft) {
-        onClose();
+    // TODO: Handle draft functionality if needed
+    // For now, we only implement save (not draft)
+    if (isDraft) {
+      console.log("Draft functionality not yet implemented");
+      return;
+    }
+
+    try {
+      if (existingSaisie) {
+        // Update existing saisie
+        const updateData: UpdateSaisieRequest = {
+          mois: selectedMonth,
+          annee: selectedYear,
+          valeurs: valeurs,
+        };
+        console.log("Updating existing saisie:", existingSaisie.id, updateData);
+        await updateSaisieMutation.mutateAsync({
+          id: existingSaisie.id,
+          data: updateData,
+        });
+      } else {
+        // Create new saisie
+        const createData: CreateSaisieRequest = {
+          site: site.id,
+          mois: selectedMonth,
+          annee: selectedYear,
+          valeurs: valeurs,
+        };
+        console.log("Creating new saisie:", createData);
+        await createSaisieMutation.mutateAsync(createData);
       }
     } catch (error) {
-      console.error("Error saving data:", error);
-    } finally {
-      setIsSaving(false);
+      // Error is handled by the mutation's onError callback
+      console.error("Save failed:", error);
     }
   };
 
@@ -185,10 +346,18 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       <div className="dialog-container">
         <div className="dialog-header">
           <div className="dialog-title-section">
-            <h2 className="dialog-title">Saisie de Données</h2>
+            <h2 className="dialog-title">
+              {existingSaisie ? "Modifier la Saisie" : "Nouvelle Saisie"}
+            </h2>
             <p className="dialog-subtitle">
               Site: {site.name} •{" "}
               {userRole === "agent" ? "Mode Agent" : "Mode Admin"}
+              {existingSaisie && (
+                <span className="saisie-status">
+                  {" "}
+                  • Statut: {existingSaisie.statut}
+                </span>
+              )}
             </p>
           </div>
           <button className="dialog-close" onClick={handleCancel}>
@@ -207,7 +376,10 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
               <select
                 id="month-select"
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                onChange={(e) => {
+                  setIsManualDateChange(true);
+                  setSelectedMonth(Number(e.target.value));
+                }}
               >
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>
@@ -221,7 +393,10 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
               <select
                 id="year-select"
                 value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                onChange={(e) => {
+                  setIsManualDateChange(true);
+                  setSelectedYear(Number(e.target.value));
+                }}
               >
                 {generateYearOptions().map((year) => (
                   <option key={year} value={year}>
@@ -234,9 +409,34 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
 
           {/* Indicators by Poste */}
           <div className="indicators-section">
-            {posteWithIndicators.length === 0 ? (
+            {!site.config_json ? (
               <div className="empty-indicators">
-                <p>Aucun indicateur configuré pour ce site</p>
+                <p>Site non configuré</p>
+                <p>
+                  Ce site n'a pas encore été configuré avec des indicateurs.
+                </p>
+                <p>
+                  Contactez l'administrateur pour configurer les indicateurs de
+                  ce site.
+                </p>
+              </div>
+            ) : !Array.isArray(site.config_json) ||
+              site.config_json.length === 0 ? (
+              <div className="empty-indicators">
+                <p>Configuration vide</p>
+                <p>
+                  Le site a été configuré mais aucun indicateur n'a été assigné.
+                </p>
+                <p>Contactez l'administrateur pour ajouter des indicateurs.</p>
+              </div>
+            ) : posteWithIndicators.length === 0 ? (
+              <div className="empty-indicators">
+                <p>Indicateurs non trouvés</p>
+                <p>
+                  La configuration existe mais les indicateurs référencés ne
+                  sont pas disponibles.
+                </p>
+                <p>Vérifiez la configuration du site avec l'administrateur.</p>
               </div>
             ) : (
               posteWithIndicators.map(({ poste, indicators }) => (
@@ -268,7 +468,10 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
                               handleInputChange(indicator.id, e.target.value)
                             }
                             className="indicator-input"
-                            disabled={isSaving}
+                            disabled={
+                              createSaisieMutation.isPending ||
+                              updateSaisieMutation.isPending
+                            }
                           />
                           <span className="indicator-unit">
                             {indicator.unite_default}
@@ -288,7 +491,9 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
           <button
             className="btn-cancel"
             onClick={handleCancel}
-            disabled={isSaving}
+            disabled={
+              createSaisieMutation.isPending || updateSaisieMutation.isPending
+            }
           >
             <Ban size={16} />
             Annuler
@@ -296,7 +501,11 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
           <button
             className="btn-draft"
             onClick={() => handleSave(true)}
-            disabled={isSaving}
+            disabled={
+              createSaisieMutation.isPending ||
+              updateSaisieMutation.isPending ||
+              !site.config_json
+            }
           >
             <FileText size={16} />
             Brouillon
@@ -304,10 +513,19 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
           <button
             className="btn-save"
             onClick={() => handleSave(false)}
-            disabled={isSaving || hasRequiredFields()}
+            disabled={
+              createSaisieMutation.isPending ||
+              updateSaisieMutation.isPending ||
+              hasRequiredFields() ||
+              !site.config_json
+            }
           >
             <Save size={16} />
-            {isSaving ? "Sauvegarde..." : "Sauvegarder"}
+            {createSaisieMutation.isPending || updateSaisieMutation.isPending
+              ? "Sauvegarde..."
+              : existingSaisie
+                ? "Mettre à jour"
+                : "Sauvegarder"}
           </button>
         </div>
       </div>

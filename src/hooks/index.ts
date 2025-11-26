@@ -13,6 +13,9 @@ export { useUpdateSiteConfig } from "./useUpdateSiteConfig";
 export { useGetSites } from "./useGetSites";
 export { useDeleteSite } from "./useDeleteSite";
 export { useGetCurrentUser } from "./useGetCurrentUser";
+export { useCreateSaisie } from "./useCreateSaisie";
+export { useGetSaisies } from "./useGetSaisies";
+export { useUpdateSaisie } from "./useUpdateSaisie";
 
 // Other hooks
 export { usePageTitle } from "./usePageTitle";
@@ -52,3 +55,12 @@ export type {
   PosteInfo,
   PosteIndicateursErrorResponse,
 } from "../types/postesIndicateurs";
+
+// Export types from saisie
+export type {
+  Saisie,
+  CreateSaisieRequest,
+  UpdateSaisieRequest,
+  SaisieValeur,
+  SaisieErrorResponse,
+} from "../types/saisie";

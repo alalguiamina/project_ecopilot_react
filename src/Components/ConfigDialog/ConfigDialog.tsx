@@ -70,9 +70,10 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
     }
   }, [isOpen]);
 
-  // Load existing site configuration
-  const { data: existingConfig, isLoading: configLoading } =
+  // Load existing site configuration using the dedicated hook
+  const { data: siteConfigData, isLoading: configLoading } =
     useGetSiteConfig(selectedSite);
+  const existingConfig = siteConfigData?.config_json;
 
   // Update the useEffect to load existing config
   useEffect(() => {
@@ -98,21 +99,15 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
         };
       });
 
-      // If we have existing config from backend, populate it
-      if (
-        existingConfig &&
-        typeof existingConfig === "object" &&
-        "configs" in existingConfig &&
-        Array.isArray(existingConfig.configs)
-      ) {
-        existingConfig.configs.forEach((config: any) => {
-          const posteId = config.poste_emission_id;
+      // If we have existing config from the hook, populate it
+      if (existingConfig && Array.isArray(existingConfig)) {
+        existingConfig.forEach((config: any) => {
+          const posteId = config.poste;
           if (!initialConfig.postesConfig[posteId]) {
             initialConfig.postesConfig[posteId] = { indicateurs: [] };
           }
-          initialConfig.postesConfig[posteId].indicateurs.push(
-            config.type_indicateur_id,
-          );
+          initialConfig.postesConfig[posteId].indicateurs =
+            config.indicateurs || [];
         });
       }
 

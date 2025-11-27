@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchClient } from "../API/fetchClient";
 
 interface SiteConfigResponse {
-  configs: Array<{
+  config_json?: Array<{
     poste: number;
     indicateurs: number[];
   }>;
@@ -14,16 +14,17 @@ export const useGetSiteConfig = (siteId: number | null) => {
     queryFn: async (): Promise<SiteConfigResponse> => {
       if (!siteId) throw new Error("Site ID is required");
 
-      const resp = await fetchClient<SiteConfigResponse>(
-        `/core/sites/${siteId}/config/`,
-      );
+      const resp = await fetchClient<any>(`/user/sites/${siteId}/`);
       if (resp.error || !resp.data) {
         throw (
           resp.error ||
           new Error(`Failed to fetch site configuration for site ${siteId}`)
         );
       }
-      return resp.data;
+      // Extract just the config_json from the site data
+      return {
+        config_json: resp.data.config_json || [],
+      };
     },
     enabled: Boolean(siteId),
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes

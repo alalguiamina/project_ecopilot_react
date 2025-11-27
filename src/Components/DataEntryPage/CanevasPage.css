@@ -1299,8 +1299,6 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  width: 50%;
-  margin: 0;
 }
 
 .saisie-group {
@@ -1335,9 +1333,14 @@
 
 .group-content {
   padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.group-content > * {
+  width: 100%;
+  max-width: none;
 }
 
 /* ================ SAISIE ITEM ================ */

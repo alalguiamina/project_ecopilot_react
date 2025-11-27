@@ -13,6 +13,7 @@ import { useGetSaisies } from "../../hooks/useGetSaisies";
 import type { Site } from "../../types/site";
 import type { Saisie } from "../../types/saisie";
 import SaisieCard from "./SaisieCard";
+import SiteCard from "./SiteCard";
 
 interface ValidatorInfo {
   id: number;
@@ -30,6 +31,10 @@ export const CanevasPage = ({ user }: { user: User }) => {
 
   const navigate = useNavigate();
   const handleLogout = () => navigate("/");
+
+  const handleSaisieClick = (siteId: number) => {
+    navigate(`/saisie/${siteId}`);
+  };
 
   // Fetch sites and users based on user role
   const {
@@ -139,19 +144,14 @@ export const CanevasPage = ({ user }: { user: User }) => {
     return [];
   }, [allSaisies, user]);
 
-  // Filter saisies by status and user's accessible sites
+  // Filter saisies by status for validees and rejetees tabs only
   const filteredSaisies = useMemo(() => {
     if (!userSaisies) {
       console.log("[CanevasPage] No userSaisies available");
-      return { enCours: [], validees: [], rejetees: [] };
+      return { validees: [], rejetees: [] };
     }
 
     const result = {
-      enCours: userSaisies.filter(
-        (saisie: Saisie) =>
-          saisie.statut === "en_attente" ||
-          saisie.statut === "valide_partiellement",
-      ),
       validees: userSaisies.filter(
         (saisie: Saisie) => saisie.statut === "valide",
       ),
@@ -163,7 +163,6 @@ export const CanevasPage = ({ user }: { user: User }) => {
 
     console.log("[CanevasPage] Filtered saisies by status:", {
       totalUserSaisies: userSaisies.length,
-      enCours: result.enCours.length,
       validees: result.validees.length,
       rejetees: result.rejetees.length,
       saisiesStatuses: userSaisies.map((s) => ({ id: s.id, statut: s.statut })),
@@ -190,64 +189,78 @@ export const CanevasPage = ({ user }: { user: User }) => {
     return site;
   };
 
-  // Group saisies by site for current tab
-  const groupedSaisies = useMemo(() => {
-    const currentSaisies =
-      filteredSaisies[
-        activeTab === "en-cours"
-          ? "enCours"
-          : activeTab === "validees"
-            ? "validees"
-            : "rejetees"
-      ];
+  // Group content based on active tab
+  const tabContent = useMemo(() => {
+    if (activeTab === "en-cours") {
+      // For "en-cours", show sites where users can create saisies
+      console.log("[CanevasPage] Showing sites for en-cours tab:", {
+        userSitesCount: userSites.length,
+        userSites: userSites.map((s) => ({ id: s.id, name: s.name })),
+      });
 
-    console.log("[CanevasPage] Grouping saisies:", {
-      activeTab,
-      currentSaisiesCount: currentSaisies.length,
-      currentSaisies: currentSaisies.map((s) => ({
-        id: s.id,
-        site: s.site,
-        statut: s.statut,
-      })),
-      availableSites: allSites?.map((s) => ({ id: s.id, name: s.name })),
-    });
+      return {
+        type: "sites" as const,
+        data: userSites,
+        count: userSites.length,
+      };
+    } else {
+      // For validees/rejetees, show saisies grouped by site
+      const currentSaisies =
+        filteredSaisies[activeTab === "validees" ? "validees" : "rejetees"];
 
-    const grouped: { [siteId: number]: { site: Site; saisies: Saisie[] } } = {};
+      console.log("[CanevasPage] Grouping saisies:", {
+        activeTab,
+        currentSaisiesCount: currentSaisies.length,
+        currentSaisies: currentSaisies.map((s: Saisie) => ({
+          id: s.id,
+          site: s.site,
+          statut: s.statut,
+        })),
+        availableSites: allSites?.map((s) => ({ id: s.id, name: s.name })),
+      });
 
-    currentSaisies.forEach((saisie: Saisie) => {
-      const site = getSiteById(saisie.site);
-      console.log(
-        `[CanevasPage] Processing saisie ${saisie.id} for site ${saisie.site}:`,
-        {
-          siteFound: !!site,
-          siteName: site?.name,
-        },
-      );
+      const grouped: { [siteId: number]: { site: Site; saisies: Saisie[] } } =
+        {};
 
-      if (site) {
-        if (!grouped[saisie.site]) {
-          grouped[saisie.site] = { site, saisies: [] };
-        }
-        grouped[saisie.site].saisies.push(saisie);
-      } else {
-        console.warn(
-          `[CanevasPage] Site ${saisie.site} not found for saisie ${saisie.id}`,
+      currentSaisies.forEach((saisie: Saisie) => {
+        const site = getSiteById(saisie.site);
+        console.log(
+          `[CanevasPage] Processing saisie ${saisie.id} for site ${saisie.site}:`,
+          {
+            siteFound: !!site,
+            siteName: site?.name,
+          },
         );
-      }
-    });
 
-    const result = Object.values(grouped);
-    console.log("[CanevasPage] Grouped result:", {
-      groupCount: result.length,
-      groups: result.map((g) => ({
-        siteId: g.site.id,
-        siteName: g.site.name,
-        saisiesCount: g.saisies.length,
-      })),
-    });
+        if (site) {
+          if (!grouped[saisie.site]) {
+            grouped[saisie.site] = { site, saisies: [] };
+          }
+          grouped[saisie.site].saisies.push(saisie);
+        } else {
+          console.warn(
+            `[CanevasPage] Site ${saisie.site} not found for saisie ${saisie.id}`,
+          );
+        }
+      });
 
-    return result;
-  }, [filteredSaisies, activeTab, allSites]);
+      const groupedData = Object.values(grouped);
+      console.log("[CanevasPage] Grouped result:", {
+        groupCount: groupedData.length,
+        groups: groupedData.map((g) => ({
+          siteId: g.site.id,
+          siteName: g.site.name,
+          saisiesCount: g.saisies.length,
+        })),
+      });
+
+      return {
+        type: "saisies" as const,
+        data: groupedData,
+        count: currentSaisies.length,
+      };
+    }
+  }, [activeTab, userSites, filteredSaisies, allSites]);
 
   // Get user information by ID
   const getUserById = (userId: number) => {
@@ -308,8 +321,11 @@ export const CanevasPage = ({ user }: { user: User }) => {
             <h1 className="saisie-title">Validation des Saisies</h1>
             <p className="saisie-subtitle">
               Consultez et validez les saisies de données RSE
-              {userSaisies.length > 0 &&
-                ` • ${userSaisies.length} saisie${userSaisies.length > 1 ? "s" : ""} trouvée${userSaisies.length > 1 ? "s" : ""}`}
+              {activeTab === "en-cours"
+                ? userSites.length > 0 &&
+                  ` • ${userSites.length} site${userSites.length > 1 ? "s" : ""} disponible${userSites.length > 1 ? "s" : ""}`
+                : userSaisies.length > 0 &&
+                  ` • ${userSaisies.length} saisie${userSaisies.length > 1 ? "s" : ""} trouvée${userSaisies.length > 1 ? "s" : ""}`}
             </p>
 
             <div className="page-actions">
@@ -345,7 +361,7 @@ export const CanevasPage = ({ user }: { user: User }) => {
                 <Clock className="tab-icon" size={20} />
                 <span className="tab-label">En Cours</span>
                 <span className="tab-count">
-                  {filteredSaisies.enCours.length}
+                  {tabContent.type === "sites" ? tabContent.count : 0}
                 </span>
               </button>
               <button
@@ -386,7 +402,7 @@ export const CanevasPage = ({ user }: { user: User }) => {
                   <p>Impossible de charger les saisies. Veuillez réessayer.</p>
                   <button onClick={() => refetchSaisies()}>Réessayer</button>
                 </div>
-              ) : groupedSaisies.length === 0 ? (
+              ) : tabContent.count === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon">
                     {activeTab === "en-cours" ? (
@@ -399,14 +415,14 @@ export const CanevasPage = ({ user }: { user: User }) => {
                   </div>
                   <h2 className="empty-state-title">
                     {activeTab === "en-cours"
-                      ? "Aucune saisie en cours"
+                      ? "Aucun site disponible"
                       : activeTab === "validees"
                         ? "Aucune saisie validée"
                         : "Aucune saisie rejetée"}
                   </h2>
                   <p className="empty-state-message">
                     {activeTab === "en-cours"
-                      ? "Aucune saisie en attente ou partiellement validée."
+                      ? "Aucun site n'est disponible pour créer une nouvelle saisie."
                       : activeTab === "validees"
                         ? "Aucune saisie n'a encore été validée."
                         : "Aucune saisie n'a été rejetée."}
@@ -414,30 +430,56 @@ export const CanevasPage = ({ user }: { user: User }) => {
                 </div>
               ) : (
                 <div className="saisie-groups">
-                  {groupedSaisies.map(({ site, saisies }) => (
-                    <div key={site.id} className="saisie-group">
+                  {tabContent.type === "sites" ? (
+                    // Render sites for en-cours tab
+                    <div className="saisie-group">
                       <div className="group-header">
-                        <h3 className="group-title">{site.name}</h3>
+                        <h3 className="group-title">Sites disponibles</h3>
                         <span className="group-count">
-                          {saisies.length} saisie{saisies.length > 1 ? "s" : ""}
+                          {tabContent.count} site
+                          {tabContent.count > 1 ? "s" : ""}
                         </span>
                       </div>
                       <div className="group-content">
-                        {saisies.map((saisie) => (
-                          <SaisieCard
-                            key={`${site.id}-${saisie.id}`}
+                        {tabContent.data.map((site) => (
+                          <SiteCard
+                            key={site.id}
                             site={site}
-                            saisie={saisie}
                             validators={getValidatorsForSite(site.id)}
+                            onSaisieClick={handleSaisieClick}
                             userRole={user?.role || "agent"}
-                            creatorUser={
-                              getUserById(saisie.created_by) || undefined
-                            }
                           />
                         ))}
                       </div>
                     </div>
-                  ))}
+                  ) : (
+                    // Render saisies grouped by site for validees/rejetees tabs
+                    tabContent.data.map(({ site, saisies }) => (
+                      <div key={site.id} className="saisie-group">
+                        <div className="group-header">
+                          <h3 className="group-title">{site.name}</h3>
+                          <span className="group-count">
+                            {saisies.length} saisie
+                            {saisies.length > 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        <div className="group-content">
+                          {saisies.map((saisie) => (
+                            <SaisieCard
+                              key={`${site.id}-${saisie.id}`}
+                              site={site}
+                              saisie={saisie}
+                              validators={getValidatorsForSite(site.id)}
+                              userRole={user?.role || "agent"}
+                              creatorUser={
+                                getUserById(saisie.created_by) || undefined
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>

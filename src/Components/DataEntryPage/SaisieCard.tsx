@@ -135,7 +135,7 @@ const SaisieCard: React.FC<SaisieCardProps> = ({
       return saisie.statut === "en_attente";
     }
 
-    if (userRole === "super_user") {
+    if (userRole === "superuser") {
       return (
         saisie.statut === "en_attente" ||
         saisie.statut === "valide_partiellement"
@@ -167,7 +167,7 @@ const SaisieCard: React.FC<SaisieCardProps> = ({
     switch (role) {
       case "user":
         return "Utilisateur";
-      case "super_user":
+      case "superuser":
         return "Super Utilisateur";
       case "admin":
         return "Administrateur";

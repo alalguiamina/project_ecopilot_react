@@ -44,7 +44,7 @@ export const CanevasPage = ({ user }: { user: User }) => {
   // For non-admin users, if sites API fails, create minimal site objects from user.sites
   const fallbackSites = useMemo((): Site[] => {
     if (
-      (user?.role === "user" || user?.role === "super_user") &&
+      (user?.role === "user" || user?.role === "superuser") &&
       sitesError &&
       user.sites
     ) {
@@ -65,7 +65,7 @@ export const CanevasPage = ({ user }: { user: User }) => {
   const userSites = useMemo((): Site[] => {
     // Use fallback sites for non-admin users if main API failed
     const sitesToUse: Site[] =
-      (user?.role === "user" || user?.role === "super_user") && sitesError
+      (user?.role === "user" || user?.role === "superuser") && sitesError
         ? fallbackSites
         : allSites || [];
 
@@ -74,8 +74,8 @@ export const CanevasPage = ({ user }: { user: User }) => {
       return sitesToUse;
     }
 
-    // Users and super_users see only their assigned sites
-    if (user?.role === "user" || user?.role === "super_user") {
+    // Users and superusers see only their assigned sites
+    if (user?.role === "user" || user?.role === "superuser") {
       return sitesToUse.filter((site: Site) => user.sites?.includes(site.id));
     }
 
@@ -114,8 +114,8 @@ export const CanevasPage = ({ user }: { user: User }) => {
       return allSaisies;
     }
 
-    // Users and super_users see only saisies for their assigned sites
-    if (user.role === "user" || user.role === "super_user") {
+    // Users and superusers see only saisies for their assigned sites
+    if (user.role === "user" || user.role === "superuser") {
       if (!user.sites || user.sites.length === 0) {
         console.log("[CanevasPage] User has no assigned sites");
         return [];
@@ -262,9 +262,7 @@ export const CanevasPage = ({ user }: { user: User }) => {
         .filter(
           (u) =>
             u.sites?.includes(siteId) &&
-            (u.role === "user" ||
-              u.role === "super_user" ||
-              u.role === "admin"),
+            (u.role === "user" || u.role === "superuser" || u.role === "admin"),
         )
         .map((u) => ({
           id: u.id,

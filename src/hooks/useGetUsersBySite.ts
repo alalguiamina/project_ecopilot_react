@@ -13,11 +13,11 @@ export const useGetUsersBySite = (siteId: number | null) =>
         throw resp.error || new Error("Failed to fetch users for site");
       }
 
-      // Filter for validators (users and super_users)
+      // Filter for validators (users and superusers)
       return resp.data.filter(
         (user) =>
           user.role === "user" ||
-          user.role === "super_user" ||
+          user.role === "superuser" ||
           user.role === "admin",
       );
     },

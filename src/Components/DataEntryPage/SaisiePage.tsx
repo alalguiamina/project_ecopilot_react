@@ -120,9 +120,7 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
         .filter(
           (u) =>
             u.sites?.includes(siteId) &&
-            (u.role === "user" ||
-              u.role === "super_user" ||
-              u.role === "admin"),
+            (u.role === "user" || u.role === "superuser" || u.role === "admin"),
         )
         .map((u) => ({
           id: u.id,

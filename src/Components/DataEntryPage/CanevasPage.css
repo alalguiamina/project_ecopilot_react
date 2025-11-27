@@ -56,16 +56,16 @@
 
 .sites-grid {
   display: grid;
-  gap: 1.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
 /* ==================== MODERN SITE CARD STYLES ==================== */
 .site-card {
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
+  border-radius: 8px;
+  padding: 1rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
@@ -1299,6 +1299,8 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  width: 50%;
+  margin: 0;
 }
 
 .saisie-group {

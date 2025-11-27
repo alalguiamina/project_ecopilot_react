@@ -54,7 +54,7 @@ const Sidebar = ({ user }: SidebarProps) => {
           icon: validationIcon,
           color: "#d92020ff",
           path: "/data-entry/canevas",
-          allowedRoles: ["admin", "super_user", "user"],
+          allowedRoles: ["admin", "superuser", "user"],
         },
         {
           id: "saisie",

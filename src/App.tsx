@@ -27,7 +27,7 @@ import CarbonFootprintPage from "Components/CarbonFootprintPage/CarbonFootprintP
 import CanevasPage from "Components/DataEntryPage/CanevasPage";
 import SaisiePage from "Components/DataEntryPage/SaisiePage";
 
-export type UserRole = "agent" | "user" | "super_user" | "admin";
+export type UserRole = "agent" | "user" | "superuser" | "admin";
 
 // Replace the local User shape with an alias to the backend type
 export type User = BackendUser;

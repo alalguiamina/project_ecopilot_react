@@ -1,15 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { Clock, CheckCircle, XCircle, Database, Building2 } from "lucide-react";
+import { Database, Building2 } from "lucide-react";
 import { User } from "../../App";
 import { useGetSites } from "../../hooks/useGetSites";
 import { useGetUsers } from "../../hooks/useGetUsers";
-import { useGetSaisies } from "../../hooks/useGetSaisies";
 import type { Site } from "../../types/site";
-import type { Saisie } from "../../types/saisie";
 import Sidebar from "../Sidebar/Sidebar";
 import Topbar from "../Topbar/Topbar";
 import SiteCard from "./SiteCard";
-import SaisieItem from "./SaisieItem";
 import DataEntryDialog from "./DataEntryDialog";
 import "./SaisiePage.css";
 
@@ -28,9 +25,6 @@ interface ValidatorInfo {
 export const SaisiePage = ({ user }: SaisiePageProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    "en-cours" | "validees" | "rejetees"
-  >("en-cours");
 
   // Logout handler
   const handleLogout = () => {
@@ -112,57 +106,11 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
   }, [allSites, fallbackSites, user, sitesError]);
 
   // Fetch all saisies for the user's accessible sites
-  const { data: allSaisies, isLoading: saisiesLoading } = useGetSaisies({
-    enabled: Boolean(userSites.length > 0),
-  });
+  // Removed: No need to fetch existing saisies for a data entry page
 
-  // Filter saisies by status and user's accessible sites
-  const filteredSaisies = useMemo(() => {
-    if (!allSaisies) return { enCours: [], validees: [], rejetees: [] };
+  // Removed: Filter saisies logic - not needed for site selection
 
-    const userSiteIds = userSites.map((site) => site.id);
-    const userSaisies = allSaisies.filter((saisie) =>
-      userSiteIds.includes(saisie.site),
-    );
-
-    return {
-      enCours: userSaisies.filter(
-        (saisie) =>
-          saisie.statut === "en_attente" ||
-          saisie.statut === "valide_partiellement",
-      ),
-      validees: userSaisies.filter((saisie) => saisie.statut === "valide"),
-      rejetees: userSaisies.filter(
-        (saisie) => saisie.statut === "refuse" || saisie.statut === "rejete",
-      ),
-    };
-  }, [allSaisies, userSites]);
-
-  // Group saisies by site for current tab
-  const groupedSaisies = useMemo(() => {
-    const currentSaisies =
-      filteredSaisies[
-        activeTab === "en-cours"
-          ? "enCours"
-          : activeTab === "validees"
-            ? "validees"
-            : "rejetees"
-      ];
-
-    const grouped: { [siteId: number]: { site: Site; saisies: Saisie[] } } = {};
-
-    currentSaisies.forEach((saisie) => {
-      const site = userSites.find((s) => s.id === saisie.site);
-      if (site) {
-        if (!grouped[saisie.site]) {
-          grouped[saisie.site] = { site, saisies: [] };
-        }
-        grouped[saisie.site].saisies.push(saisie);
-      }
-    });
-
-    return Object.values(grouped);
-  }, [filteredSaisies, activeTab, userSites]);
+  // Removed: Group saisies logic - not needed for site selection
 
   // Get validators for each site
   const getValidatorsForSite = (siteId: number): ValidatorInfo[] => {
@@ -230,8 +178,7 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
 
   if (
     (user.role === "admin" && sitesLoading) ||
-    (user.role === "admin" && usersLoading) ||
-    saisiesLoading
+    (user.role === "admin" && usersLoading)
   ) {
     return (
       <div className="saisie-page">
@@ -277,7 +224,7 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
           <header className="saisie-header">
             <h1 className="saisie-title">Saisie de Données</h1>
             <p className="saisie-subtitle">
-              Gestion des validations et saisie de données par site
+              Créez de nouvelles saisies de données pour vos sites assignés
               {user.role === "agent" &&
                 ` • ${userSites.length} site${userSites.length > 1 ? "s" : ""} assigné${userSites.length > 1 ? "s" : ""}`}
               {user.role === "admin" &&
@@ -296,148 +243,41 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
               )}
           </header>
 
-          <div className="saisie-tabs">
-            <div className="tabs-header">
-              <button
-                className={`tab-button ${
-                  activeTab === "en-cours" ? "active" : ""
-                }`}
-                onClick={() => setActiveTab("en-cours")}
-              >
-                <Clock className="tab-icon" size={20} />
-                <span className="tab-label">En Cours</span>
-                <span className="tab-count">
-                  {filteredSaisies.enCours.length}
-                </span>
-              </button>
-              <button
-                className={`tab-button ${
-                  activeTab === "validees" ? "active" : ""
-                }`}
-                onClick={() => setActiveTab("validees")}
-              >
-                <CheckCircle className="tab-icon" size={20} />
-                <span className="tab-label">Validées</span>
-                <span className="tab-count">
-                  {filteredSaisies.validees.length}
-                </span>
-              </button>
-              <button
-                className={`tab-button ${
-                  activeTab === "rejetees" ? "active" : ""
-                }`}
-                onClick={() => setActiveTab("rejetees")}
-              >
-                <XCircle className="tab-icon" size={20} />
-                <span className="tab-label">Rejetées</span>
-                <span className="tab-count">
-                  {filteredSaisies.rejetees.length}
-                </span>
-              </button>
-            </div>
+          <div className="saisie-content">
+            {userSites.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <Building2 size={48} />
+                </div>
+                <h2 className="empty-state-title">Aucun site disponible</h2>
+                <p className="empty-state-message">
+                  {user.role === "agent"
+                    ? "Aucun site ne vous a été assigné pour la saisie de données. Contactez votre administrateur."
+                    : "Aucun site n'est configuré dans le système."}
+                </p>
+              </div>
+            ) : (
+              <div className="sites-creation">
+                <div className="sites-grid">
+                  {userSites.map((site: Site) => {
+                    const validators =
+                      user.role === "admin"
+                        ? getValidatorsForSite(site.id)
+                        : undefined;
 
-            <div className="tab-content">
-              {userSites.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-state-icon">
-                    <Building2 size={48} />
-                  </div>
-                  <h2 className="empty-state-title">Aucun site disponible</h2>
-                  <p className="empty-state-message">
-                    {user.role === "agent"
-                      ? "Aucun site ne vous a été assigné pour la saisie de données. Contactez votre administrateur."
-                      : "Aucun site n'est configuré dans le système."}
-                  </p>
+                    return (
+                      <SiteCard
+                        key={site.id}
+                        site={site}
+                        validators={validators}
+                        onSaisieClick={handleSaisieClick}
+                        userRole={user.role}
+                      />
+                    );
+                  })}
                 </div>
-              ) : filteredSaisies.enCours.length === 0 &&
-                filteredSaisies.validees.length === 0 &&
-                filteredSaisies.rejetees.length === 0 ? (
-                // Show site creation interface when no saisies exist
-                <div className="sites-creation">
-                  <div className="empty-state">
-                    <div className="empty-state-icon">
-                      <Database size={48} />
-                    </div>
-                    <h2 className="empty-state-title">Aucune saisie trouvée</h2>
-                    <p className="empty-state-message">
-                      Créez votre première saisie en sélectionnant un site
-                      ci-dessous.
-                    </p>
-                  </div>
-
-                  <div className="sites-grid">
-                    {userSites.map((site: Site) => {
-                      const validators =
-                        user.role === "admin"
-                          ? getValidatorsForSite(site.id)
-                          : undefined;
-
-                      return (
-                        <SiteCard
-                          key={site.id}
-                          site={site}
-                          validators={validators}
-                          onSaisieClick={handleSaisieClick}
-                          userRole={user.role}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : groupedSaisies.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-state-icon">
-                    {activeTab === "en-cours" ? (
-                      <Clock size={14} />
-                    ) : activeTab === "validees" ? (
-                      <CheckCircle size={14} />
-                    ) : (
-                      <XCircle size={14} />
-                    )}
-                  </div>
-                  <h2 className="empty-state-title">
-                    {activeTab === "en-cours"
-                      ? "Aucune saisie en cours"
-                      : activeTab === "validees"
-                        ? "Aucune saisie validée"
-                        : "Aucune saisie rejetée"}
-                  </h2>
-                  <p className="empty-state-message">
-                    {activeTab === "en-cours"
-                      ? "Créez une nouvelle saisie pour commencer."
-                      : activeTab === "validees"
-                        ? "Aucune saisie n'a encore été validée."
-                        : "Aucune saisie n'a été rejetée."}
-                  </p>
-                </div>
-              ) : (
-                <div className="saisie-groups">
-                  {groupedSaisies.map(({ site, saisies }) => (
-                    <div key={site.id} className="saisie-group">
-                      <div className="group-header">
-                        <h3 className="group-title">{site.name}</h3>
-                        <span className="group-count">
-                          {saisies.length} saisie{saisies.length > 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div className="group-content">
-                        {saisies.map((saisie) => (
-                          <SaisieItem
-                            key={`${site.id}-${saisie.id}`}
-                            site={site}
-                            saisie={saisie}
-                            onEdit={handleSaisieClick}
-                            creatorUser={allUsers?.find(
-                              (u) => u.id === saisie.created_by,
-                            )}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </main>
       </div>

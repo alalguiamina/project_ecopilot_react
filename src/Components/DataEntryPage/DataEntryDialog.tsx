@@ -6,7 +6,7 @@ import { useGetTypeIndicateurs } from "../../hooks/useGetTypeIndicators";
 import { useCreateSaisie } from "../../hooks/useCreateSaisie";
 import { useGetSaisies } from "../../hooks/useGetSaisies";
 import { useUpdateSaisie } from "../../hooks/useUpdateSaisie";
-import { useGetDetailedSiteConfig } from "../../hooks/useGetDetailedSiteConfig";
+import { useGetSites } from "../../hooks/useGetSites";
 import type { Site } from "../../types/site";
 import type { TypeIndicateur } from "../../types/typeIndicateurs";
 import type {
@@ -85,12 +85,36 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
   // Query client for cache invalidation
   const queryClient = useQueryClient();
 
+  // Fetch fresh site data when dialog opens
+  const { data: freshSiteData } = useGetSites();
+  const currentSite = useMemo(() => {
+    // Use the fresh site data if available, otherwise fall back to the prop
+    if (freshSiteData && site?.id) {
+      const updatedSite = freshSiteData.find((s) => s.id === site.id);
+      if (updatedSite) {
+        console.log("[DataEntryDialog] Using fresh site data:", {
+          siteId: updatedSite.id,
+          hasConfig: !!updatedSite.config_json,
+          configLength: Array.isArray(updatedSite.config_json)
+            ? updatedSite.config_json.length
+            : 0,
+        });
+        return updatedSite;
+      }
+    }
+    console.log("[DataEntryDialog] Using prop site data:", {
+      siteId: site?.id,
+      hasConfig: !!site?.config_json,
+      configLength: Array.isArray(site?.config_json)
+        ? site?.config_json.length
+        : 0,
+    });
+    return site;
+  }, [freshSiteData, site]);
+
   // Fetch data
   const { data: postesEmission } = useGetPostesEmission();
   const { data: typeIndicateurs } = useGetTypeIndicateurs();
-  const { data: detailedSiteConfig } = useGetDetailedSiteConfig(
-    site?.id || null,
-  );
 
   // Fetch existing saisies for this site/month/year
   const {
@@ -98,10 +122,10 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
     refetch: refetchSaisies,
     isLoading: saisiesLoading,
   } = useGetSaisies({
-    siteId: site?.id,
+    siteId: currentSite?.id,
     mois: selectedMonth,
     annee: selectedYear,
-    enabled: Boolean(site?.id && selectedMonth && selectedYear),
+    enabled: Boolean(currentSite?.id && selectedMonth && selectedYear),
   });
 
   // Create saisie mutation
@@ -167,11 +191,23 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
 
   // Organize indicators by poste
   const posteWithIndicators = useMemo((): PosteWithIndicators[] => {
+    console.log("[DataEntryDialog] Building posteWithIndicators:", {
+      hasPostesEmission: !!postesEmission,
+      postesCount: postesEmission?.length || 0,
+      hasTypeIndicateurs: !!typeIndicateurs,
+      indicateursCount: typeIndicateurs?.length || 0,
+      siteConfigJson: site.config_json,
+      siteConfigType: typeof site.config_json,
+      siteConfigIsArray: Array.isArray(site.config_json),
+      siteConfigLength: Array.isArray(site.config_json)
+        ? site.config_json.length
+        : 0,
+    });
+
     if (!postesEmission || !typeIndicateurs) return [];
 
-    // Use detailed config if available, fall back to basic config
-    const siteConfig =
-      detailedSiteConfig?.organized_configs || site.config_json;
+    // Use site config_json which contains obligatoire information
+    const siteConfig = currentSite?.config_json;
     if (!Array.isArray(siteConfig)) return [];
 
     // Create a map of indicators by ID for quick lookup
@@ -185,11 +221,31 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
     // Create a map of postes by ID for quick lookup
     const postesMap = new Map(postesEmission.map((poste) => [poste.id, poste]));
 
+    console.log("[DataEntryDialog] Maps created:", {
+      indicatorsMapSize: indicatorsMap.size,
+      indicatorIds: Array.from(indicatorsMap.keys()),
+      postesMapSize: postesMap.size,
+      posteIds: Array.from(postesMap.keys()),
+      siteConfigStructure: siteConfig.map((config) => ({
+        poste: config.poste,
+        indicateursCount: config.indicateurs?.length || 0,
+        indicateurs: config.indicateurs,
+      })),
+    });
+
     // Build the structure from site config
     return siteConfig
       .map((config) => {
         const poste = postesMap.get(config.poste);
-        if (!poste) return null;
+        if (!poste) {
+          console.log(
+            "[DataEntryDialog] Poste not found:",
+            config.poste,
+            "Available postes:",
+            Array.from(postesMap.keys()),
+          );
+          return null;
+        }
 
         // Handle both detailed config (with obligatoire) and basic config
         const configIndicateurs = Array.isArray(config.indicateurs)
@@ -202,14 +258,22 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
             const indicatorId =
               typeof indicatorItem === "number"
                 ? indicatorItem
-                : indicatorItem.id;
+                : indicatorItem.id || indicatorItem.indicateur_id; // Handle both id and indicateur_id
             const obligatoire =
               typeof indicatorItem === "object"
                 ? indicatorItem.obligatoire
                 : false;
 
             const indicator = indicatorsMap.get(indicatorId);
-            if (!indicator) return null;
+            if (!indicator) {
+              console.log(
+                "[DataEntryDialog] Indicator not found:",
+                indicatorId,
+                "Available indicators:",
+                Array.from(indicatorsMap.keys()),
+              );
+              return null;
+            }
 
             return {
               ...indicator,
@@ -228,7 +292,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       })
       .filter((item): item is PosteWithIndicators => Boolean(item))
       .filter((item) => item.indicators.length > 0);
-  }, [postesEmission, typeIndicateurs, site.config_json, detailedSiteConfig]);
+  }, [postesEmission, typeIndicateurs, currentSite?.config_json]);
 
   // Check for existing saisie and load data
   useEffect(() => {
@@ -389,7 +453,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
   };
 
   const handleSave = async (isDraft = false) => {
-    if (!site?.id || !selectedMonth || !selectedYear) {
+    if (!currentSite?.id || !selectedMonth || !selectedYear) {
       alert("Informations manquantes pour la sauvegarde");
       return;
     }
@@ -429,7 +493,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
     try {
       console.log("[DataEntryDialog] About to save:", {
         existingSaisie: existingSaisie?.id,
-        site: site.id,
+        site: currentSite.id,
         month: selectedMonth,
         year: selectedYear,
         valueCount: valeurs.length,
@@ -450,7 +514,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       } else {
         // Create new saisie
         const createData: CreateSaisieRequest = {
-          site: site.id,
+          site: currentSite.id,
           mois: selectedMonth,
           annee: selectedYear,
           valeurs: valeurs,
@@ -517,7 +581,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
               {existingSaisie ? "Modifier la Saisie" : "Nouvelle Saisie"}
             </h2>
             <p className="dialog-subtitle">
-              Site: {site.name} •{" "}
+              Site: {currentSite?.name} •{" "}
               {userRole === "agent" ? "Mode Agent" : "Mode Admin"}
               {existingSaisie && (
                 <span className="saisie-status">
@@ -576,7 +640,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
 
           {/* Indicators by Poste */}
           <div className="indicators-section">
-            {!site.config_json ? (
+            {!currentSite?.config_json ? (
               <div className="empty-indicators">
                 <p>Site non configuré</p>
                 <p>
@@ -587,8 +651,8 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
                   ce site.
                 </p>
               </div>
-            ) : !Array.isArray(site.config_json) ||
-              site.config_json.length === 0 ? (
+            ) : !Array.isArray(currentSite.config_json) ||
+              currentSite.config_json.length === 0 ? (
               <div className="empty-indicators">
                 <p>Configuration vide</p>
                 <p>
@@ -604,6 +668,37 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
                   sont pas disponibles.
                 </p>
                 <p>Vérifiez la configuration du site avec l'administrateur.</p>
+                <details
+                  style={{
+                    marginTop: "16px",
+                    padding: "8px",
+                    background: "#f3f4f6",
+                    borderRadius: "4px",
+                  }}
+                >
+                  <summary>Informations de débogage</summary>
+                  <pre style={{ fontSize: "12px", marginTop: "8px" }}>
+                    {JSON.stringify(
+                      {
+                        siteConfig: currentSite?.config_json,
+                        availablePostes:
+                          postesEmission?.map((p) => ({
+                            id: p.id,
+                            name: p.name,
+                          })) || [],
+                        availableIndicators:
+                          typeIndicateurs?.map((i) => ({
+                            id: i.id,
+                            code: i.code,
+                          })) || [],
+                        hasPostes: !!postesEmission,
+                        hasIndicators: !!typeIndicateurs,
+                      },
+                      null,
+                      2,
+                    )}
+                  </pre>
+                </details>
               </div>
             ) : (
               posteWithIndicators.map(({ poste, indicators }) => (
@@ -686,7 +781,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
               createSaisieMutation.isPending ||
               updateSaisieMutation.isPending ||
               hasRequiredFields() ||
-              !site.config_json
+              !currentSite?.config_json
             }
           >
             <Save size={16} />

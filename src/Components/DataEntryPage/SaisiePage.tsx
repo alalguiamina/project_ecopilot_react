@@ -3,6 +3,7 @@ import { Database, Building2 } from "lucide-react";
 import { User } from "../../App";
 import { useGetSites } from "../../hooks/useGetSites";
 import { useGetUsers } from "../../hooks/useGetUsers";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Site } from "../../types/site";
 import Sidebar from "../Sidebar/Sidebar";
 import Topbar from "../Topbar/Topbar";
@@ -25,6 +26,7 @@ interface ValidatorInfo {
 export const SaisiePage = ({ user }: SaisiePageProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const queryClient = useQueryClient();
 
   // Logout handler
   const handleLogout = () => {
@@ -163,12 +165,12 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
         configLength: Array.isArray(site.config_json)
           ? site.config_json.length
           : "not array",
+        configContent: site.config_json,
       });
       setSelectedSite(site);
       setIsDialogOpen(true);
     }
   };
-
   const handleDialogClose = () => {
     setIsDialogOpen(false);
     setSelectedSite(null);

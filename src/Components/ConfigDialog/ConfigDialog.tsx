@@ -12,7 +12,6 @@ import { useGetPostesEmission } from "../../hooks/useGetPostesEmission";
 import { useUpdateSiteConfig } from "../../hooks/useUpdateSiteConfig";
 import { useGetPosteIndicateurs } from "../../hooks/useGetPosteIndicateurs";
 import { useGetSiteConfig } from "../../hooks/useGetSiteConfig";
-import { useGetDetailedSiteConfig } from "../../hooks/useGetDetailedSiteConfig";
 import type { PosteEmission } from "../../types/postesEmission";
 import type { PosteIndicateur } from "../../types/postesIndicateurs";
 import "./ConfigDialog.css";
@@ -65,10 +64,6 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
     useGetSiteConfig(selectedSite);
   const existingConfig = siteConfigData?.config_json;
 
-  // Load detailed site configuration with obligatoire flags
-  const { data: detailedSiteConfig, isLoading: detailedConfigLoading } =
-    useGetDetailedSiteConfig(selectedSite);
-
   // Reset all form state when dialog opens
   useEffect(() => {
     if (isOpen) {
@@ -107,28 +102,29 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
         };
       });
 
-      // Use detailed config if available, fall back to basic config
-      if (detailedSiteConfig?.organized_configs) {
-        // Use detailed config with obligatoire flags
-        detailedSiteConfig.organized_configs.forEach((config) => {
-          const posteId = config.poste;
-          if (!initialConfig.postesConfig[posteId]) {
-            initialConfig.postesConfig[posteId] = { indicateurs: [] };
-          }
-          initialConfig.postesConfig[posteId].indicateurs = config.indicateurs;
-        });
-      } else if (existingConfig && Array.isArray(existingConfig)) {
-        // Fall back to basic config
+      // Use existing config_json which already contains obligatoire information
+      if (existingConfig && Array.isArray(existingConfig)) {
         existingConfig.forEach((config: any) => {
           const posteId = config.poste;
           if (!initialConfig.postesConfig[posteId]) {
             initialConfig.postesConfig[posteId] = { indicateurs: [] };
           }
-          // Convert simple array to object array with obligatoire flag
-          const indicateurs = (config.indicateurs || []).map((id: number) => ({
-            id,
-            obligatoire: false, // Default to optional for basic config
-          }));
+          // Use existing config which should have obligatoire flags
+          const indicateurs = (config.indicateurs || []).map((item: any) => {
+            if (typeof item === "object" && item.id !== undefined) {
+              // Already has obligatoire flag
+              return {
+                id: item.id,
+                obligatoire: Boolean(item.obligatoire),
+              };
+            } else {
+              // Legacy format - convert to object
+              return {
+                id: typeof item === "number" ? item : item.id,
+                obligatoire: false,
+              };
+            }
+          });
           initialConfig.postesConfig[posteId].indicateurs = indicateurs;
         });
       }
@@ -137,7 +133,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
     });
 
     setPosteIndicateursData({});
-  }, [selectedSite, postes, existingConfig, detailedSiteConfig]);
+  }, [selectedSite, postes, existingConfig]);
 
   const handleSiteSelect = (siteId: number | null) => {
     setSelectedSite(siteId);
@@ -226,12 +222,12 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
     if (!selectedSite) return;
 
     try {
+      // Create the configs array in the format expected by the backend
       const configPayload = {
         configs: Object.entries(siteConfig.postesConfig).flatMap(
           ([posteId, config]) =>
             config.indicateurs.map((indicateur) => ({
               type_indicateur_id: indicateur.id,
-              poste_emission_id: parseInt(posteId),
               obligatoire: indicateur.obligatoire,
             })),
         ),
@@ -245,6 +241,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
       alert("Configuration sauvegardée avec succès!");
       onClose();
     } catch (error) {
+      console.error("Error saving config:", error);
       alert("Erreur lors de la sauvegarde de la configuration");
     }
   };
@@ -258,8 +255,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   if (!isOpen) return null;
 
   // Update isLoading check
-  const isLoading =
-    sitesLoading || postesLoading || configLoading || detailedConfigLoading;
+  const isLoading = sitesLoading || postesLoading || configLoading;
 
   return (
     <div className="config-dialog-overlay">

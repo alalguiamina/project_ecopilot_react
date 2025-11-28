@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
-import { X, Calendar, Eye } from "lucide-react";
+import { X, Calendar, FileText, Eye } from "lucide-react";
 import { useGetPostesEmission } from "../../hooks/useGetPostesEmission";
 import { useGetTypeIndicateurs } from "../../hooks/useGetTypeIndicators";
-import { useGetDetailedSiteConfig } from "../../hooks/useGetDetailedSiteConfig";
 import type { Site } from "../../types/site";
 import type { TypeIndicateur } from "../../types/typeIndicateurs";
 import type { Saisie } from "../../types/saisie";
@@ -39,17 +38,13 @@ export const SaisieViewDialog: React.FC<SaisieViewDialogProps> = ({
   // Fetch data
   const { data: postesEmission } = useGetPostesEmission();
   const { data: typeIndicateurs } = useGetTypeIndicateurs();
-  const { data: detailedSiteConfig } = useGetDetailedSiteConfig(
-    site?.id || null,
-  );
 
   // Organize indicators by poste with values
   const posteWithIndicators = useMemo((): PosteWithIndicators[] => {
     if (!postesEmission || !typeIndicateurs) return [];
 
-    // Use detailed config if available, fall back to basic config
-    const siteConfig =
-      detailedSiteConfig?.organized_configs || site.config_json;
+    // Use site config_json which contains obligatoire information
+    const siteConfig = site.config_json;
     if (!Array.isArray(siteConfig)) return [];
 
     // Create a map of indicators by ID for quick lookup
@@ -88,7 +83,7 @@ export const SaisieViewDialog: React.FC<SaisieViewDialogProps> = ({
             const indicatorId =
               typeof indicatorItem === "number"
                 ? indicatorItem
-                : indicatorItem.id;
+                : indicatorItem.id || indicatorItem.indicateur_id; // Handle both id and indicateur_id
             const obligatoire =
               typeof indicatorItem === "object"
                 ? indicatorItem.obligatoire
@@ -121,13 +116,7 @@ export const SaisieViewDialog: React.FC<SaisieViewDialogProps> = ({
       })
       .filter((item): item is PosteWithIndicators => Boolean(item))
       .filter((item) => item.indicators.length > 0);
-  }, [
-    postesEmission,
-    typeIndicateurs,
-    site.config_json,
-    saisie.valeurs,
-    detailedSiteConfig,
-  ]);
+  }, [postesEmission, typeIndicateurs, site.config_json, saisie.valeurs]);
 
   const getMonthName = (month: number) => {
     const months = [

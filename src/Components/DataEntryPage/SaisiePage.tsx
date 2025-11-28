@@ -290,7 +290,7 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
               {user.role === "agent" &&
                 ` • ${userSites.length} site${userSites.length > 1 ? "s" : ""} assigné${userSites.length > 1 ? "s" : ""}`}
               {user.role === "admin" &&
-                ` • ${userSites.length} site${userSites.length > 1 ? "s" : ""} total${userSites.length > 1 ? "aux" : ""}`}
+                ` • ${userSites.length} site${userSites.length > 1 ? "s" : ""} `}
             </p>
             {user.role === "agent" &&
               sitesError &&

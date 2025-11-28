@@ -731,6 +731,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
                             onChange={(e) =>
                               handleInputChange(indicator.id, e.target.value)
                             }
+                            onWheel={(e) => e.currentTarget.blur()}
                             className="indicator-input"
                             disabled={
                               createSaisieMutation.isPending ||

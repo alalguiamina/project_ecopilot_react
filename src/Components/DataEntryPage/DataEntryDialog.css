@@ -388,3 +388,20 @@
   animation: spin 1s linear infinite;
   margin-right: 0.5rem;
 }
+
+/* Prevent touchpad/mouse wheel from changing number inputs */
+.indicator-input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+.indicator-input[type="number"]::-webkit-outer-spin-button,
+.indicator-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none; /* Chrome, Safari, Edge */
+  margin: 0;
+}
+
+/* Focus behavior for wheel events */
+.indicator-input[type="number"]:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}

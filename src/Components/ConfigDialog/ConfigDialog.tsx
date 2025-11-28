@@ -47,7 +47,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
 }) => {
   const [selectedSite, setSelectedSite] = useState<number | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
-  const [expandedPostes, setExpandedPostes] = useState<Set<number>>(new Set());
+  const [expandedPoste, setExpandedPoste] = useState<number | null>(null);
   const [siteConfig, setSiteConfig] = useState<SiteConfig>({
     siteId: 0,
     postesConfig: {},
@@ -69,7 +69,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
     if (isOpen) {
       setSelectedSite(null);
       setSelectedUsers([]);
-      setExpandedPostes(new Set());
+      setExpandedPoste(null);
       setSiteConfig({
         siteId: 0,
         postesConfig: {},
@@ -137,19 +137,13 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
 
   const handleSiteSelect = (siteId: number | null) => {
     setSelectedSite(siteId);
-    setExpandedPostes(new Set());
+    setExpandedPoste(null);
     // Clear poste indicateurs data when changing sites
     setPosteIndicateursData({});
   };
 
   const togglePosteExpansion = (posteId: number) => {
-    const newExpanded = new Set(expandedPostes);
-    if (newExpanded.has(posteId)) {
-      newExpanded.delete(posteId);
-    } else {
-      newExpanded.add(posteId);
-    }
-    setExpandedPostes(newExpanded);
+    setExpandedPoste((current) => (current === posteId ? null : posteId));
   };
 
   const handleIndicateurToggle = (posteId: number, indicateurId: number) => {
@@ -369,7 +363,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
                       <PostePanel
                         key={poste.id}
                         poste={poste}
-                        isExpanded={expandedPostes.has(poste.id)}
+                        isExpanded={expandedPoste === poste.id}
                         onToggleExpansion={() => togglePosteExpansion(poste.id)}
                         siteConfig={siteConfig}
                         onIndicateurToggle={handleIndicateurToggle}

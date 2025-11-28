@@ -16,6 +16,7 @@ export { useGetCurrentUser } from "./useGetCurrentUser";
 export { useCreateSaisie } from "./useCreateSaisie";
 export { useGetSaisies } from "./useGetSaisies";
 export { useUpdateSaisie } from "./useUpdateSaisie";
+export { useUploadCsvSaisie } from "./useUploadCsvSaisie";
 
 // Other hooks
 export { usePageTitle } from "./usePageTitle";
@@ -63,4 +64,6 @@ export type {
   UpdateSaisieRequest,
   SaisieValeur,
   SaisieErrorResponse,
+  CsvUploadResponse,
+  CsvUploadRequest,
 } from "../types/saisie";

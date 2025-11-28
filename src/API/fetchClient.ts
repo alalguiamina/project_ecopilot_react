@@ -16,6 +16,20 @@ const API_BASE_URL =
 
 console.log("[API] Using base URL:", API_BASE_URL);
 
+// ✅ Normalize API base URL to prevent double slashes
+const normalizeApiBaseUrl = (baseUrl: string): string => {
+  // Remove trailing slash if present
+  let normalized = baseUrl.replace(/\/+$/, "");
+
+  // Fix double slashes in protocol (https// -> https://)
+  normalized = normalized.replace(/^(https?)\/\/([^\/])/, "$1://$2");
+
+  console.log("[API] Normalized URL:", normalized);
+  return normalized;
+};
+
+const NORMALIZED_API_BASE_URL = normalizeApiBaseUrl(API_BASE_URL);
+
 const REFRESH_ENDPOINT = "/token/refresh/";
 
 // ✅ Get token from any possible storage key
@@ -83,7 +97,7 @@ async function tryRefreshToken(): Promise<string | null> {
     return null;
   }
 
-  const fullRefreshUrl = `${API_BASE_URL}${REFRESH_ENDPOINT}`;
+  const fullRefreshUrl = `${NORMALIZED_API_BASE_URL}${REFRESH_ENDPOINT}`;
   try {
     console.log("[fetchClient] Attempting token refresh...");
     const r = await fetch(fullRefreshUrl, {
@@ -126,7 +140,13 @@ export async function fetchClient<T>(
   endpoint: string,
   options: FetchOptions = {},
 ): Promise<ApiResponse<T>> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  // ✅ Ensure endpoint starts with /
+  const normalizedEndpoint = endpoint.startsWith("/")
+    ? endpoint
+    : `/${endpoint}`;
+
+  // ✅ Construct URL properly
+  const url = `${NORMALIZED_API_BASE_URL}${normalizedEndpoint}`;
 
   console.log("[fetchClient] Full URL:", url);
   console.log("[fetchClient] Method:", options.method ?? "GET");

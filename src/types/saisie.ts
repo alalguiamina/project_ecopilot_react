@@ -43,3 +43,23 @@ export interface SaisieErrorResponse {
   non_field_errors?: string[];
   [key: string]: any;
 }
+
+// CSV Upload types
+export interface CsvUploadResponse {
+  message: string;
+  created_saisies?: number;
+  updated_saisies?: number;
+  errors?: Array<{
+    row: number;
+    message: string;
+  }>;
+  warnings?: Array<{
+    row: number;
+    message: string;
+  }>;
+}
+
+export interface CsvUploadRequest {
+  siteId: number;
+  file: File;
+}

@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/project_ecopilot_react/static/css/main.431387f2.css",
-    "main.js": "/project_ecopilot_react/static/js/main.4ef09b07.js",
+    "main.js": "/project_ecopilot_react/static/js/main.139a49d3.js",
     "static/media/backgroundlogin.jpg": "/project_ecopilot_react/static/media/backgroundlogin.502484a82129d2a8a31d.jpg",
     "static/media/target.png": "/project_ecopilot_react/static/media/target.1f12d23db7d13f6d30e5.png",
     "static/media/award.png": "/project_ecopilot_react/static/media/award.153aeab1f5fe56f65fc3.png",
@@ -18,10 +18,10 @@
     "static/media/chart.png": "/project_ecopilot_react/static/media/chart.781ef5a0b21cf67a87a7.png",
     "index.html": "/project_ecopilot_react/index.html",
     "main.431387f2.css.map": "/project_ecopilot_react/static/css/main.431387f2.css.map",
-    "main.4ef09b07.js.map": "/project_ecopilot_react/static/js/main.4ef09b07.js.map"
+    "main.139a49d3.js.map": "/project_ecopilot_react/static/js/main.139a49d3.js.map"
   },
   "entrypoints": [
     "static/css/main.431387f2.css",
-    "static/js/main.4ef09b07.js"
+    "static/js/main.139a49d3.js"
   ]
 }

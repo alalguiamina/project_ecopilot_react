@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { SiteComboBox } from "./SiteComboBox";
 import { UserData, Site } from "types/organisation";
 
 interface EditUserDialogProps {
@@ -19,6 +20,59 @@ export function EditUserDialog({
   onClose,
 }: EditUserDialogProps) {
   if (!isOpen || !user) return null;
+
+  // Convert UI role to backend role for display in select
+  const uiRoleToBackend = (uiRole: string): string => {
+    switch (uiRole) {
+      case "Admin":
+        return "admin";
+      case "Super User":
+        return "superuser";
+      case "Agent de saisie":
+        return "agent";
+      case "User":
+        return "user";
+      default:
+        return uiRole.toLowerCase(); // fallback
+    }
+  };
+
+  // Convert backend role to UI role for state management
+  const backendRoleToUI = (backendRole: string): string => {
+    switch (backendRole) {
+      case "admin":
+        return "Admin";
+      case "superuser":
+        return "Super User";
+      case "agent":
+        return "Agent de saisie";
+      case "user":
+        return "User";
+      default:
+        return backendRole;
+    }
+  };
+
+  // Get current backend role for the select element
+  const getCurrentBackendRole = (): string => {
+    return uiRoleToBackend(user.role);
+  };
+
+  // Ensure user has sites array populated
+  // If sites array is empty but site string exists, try to find the site ID
+  const getCurrentUserSites = (): number[] => {
+    if (user.sites && user.sites.length > 0) {
+      return user.sites;
+    }
+
+    // If no sites array but has site string, try to find the site ID
+    if (user.site) {
+      const foundSite = sites.find((s) => s.name === user.site);
+      return foundSite ? [foundSite.id] : [];
+    }
+
+    return [];
+  };
 
   return (
     <div className="dialog-overlay">
@@ -70,31 +124,45 @@ export function EditUserDialog({
               />
             </div>
 
-            <div className="form-field">
-              <label>Site</label>
-              <select
-                value={user.site}
-                onChange={(e) => setUser({ ...user, site: e.target.value })}
-              >
-                <option value="">Select site</option>
-                {sites.map((s) => (
-                  <option key={s.id} value={s.name}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+            <div className="form-field full-width">
+              <label>Sites</label>
+              <SiteComboBox
+                isMulti={true}
+                value={getCurrentUserSites()}
+                onChange={(selectedSites) => {
+                  const sitesArray = Array.isArray(selectedSites)
+                    ? selectedSites
+                    : [];
+                  // Find the first site name for backward compatibility with the display
+                  const primarySiteName =
+                    sitesArray.length > 0
+                      ? sites.find((s) => s.id === sitesArray[0])?.name || ""
+                      : "";
+                  setUser({
+                    ...user,
+                    sites: sitesArray,
+                    site: primarySiteName,
+                  });
+                }}
+                placeholder="Sélectionner les sites..."
+                isClearable={true}
+              />
             </div>
 
             <div className="form-field">
               <label>Role</label>
               <select
-                value={user.role}
-                onChange={(e) => setUser({ ...user, role: e.target.value })}
+                value={getCurrentBackendRole()}
+                onChange={(e) => {
+                  const backendRole = e.target.value;
+                  const uiRole = backendRoleToUI(backendRole);
+                  setUser({ ...user, role: uiRole });
+                }}
               >
-                <option value="Agent de saisie">Agent de saisie</option>
-                <option value="User">User</option>
-                <option value="Super User">Super User</option>
-                <option value="Admin">Admin</option>
+                <option value="user">User</option>
+                <option value="agent">Agent de saisie</option>
+                <option value="superuser">Super User</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
           </div>

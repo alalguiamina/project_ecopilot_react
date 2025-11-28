@@ -47,9 +47,22 @@ const SaisieCard: React.FC<SaisieCardProps> = ({
   const validateSaisieMutation = useValidateSaisie({
     onSuccess: (data) => {
       console.log("Saisie validation successful:", data);
-      alert(
-        `Saisie ${data.statut === "valide" ? "validée" : "rejetée"} avec succès !`,
-      );
+      let message = "";
+      switch (data.statut) {
+        case "valide":
+          message = "Saisie validée avec succès !";
+          break;
+        case "valide_partiellement":
+          message = "Saisie partiellement validée avec succès !";
+          break;
+        case "rejete":
+        case "refuse":
+          message = "Saisie rejetée avec succès !";
+          break;
+        default:
+          message = `Saisie ${data.statut} avec succès !`;
+      }
+      alert(message);
     },
     onError: (error) => {
       console.error("Error validating saisie:", error);
@@ -233,9 +246,21 @@ const SaisieCard: React.FC<SaisieCardProps> = ({
                 <span className="detail-label">Créé par</span>
                 <span className="detail-value">
                   {creatorUser
-                    ? creatorUser.first_name && creatorUser.last_name
-                      ? `${creatorUser.first_name} ${creatorUser.last_name}`
-                      : creatorUser.username
+                    ? (() => {
+                        const firstName = creatorUser.first_name?.trim();
+                        const lastName = creatorUser.last_name?.trim();
+
+                        if (firstName && lastName) {
+                          return `${firstName} ${lastName}`;
+                        } else if (firstName) {
+                          return firstName;
+                        } else if (lastName) {
+                          return lastName;
+                        } else {
+                          // Fallback to username if no name parts available
+                          return creatorUser.username;
+                        }
+                      })()
                     : `Utilisateur #${saisie.created_by}`}
                 </span>
               </div>
@@ -302,9 +327,20 @@ const SaisieCard: React.FC<SaisieCardProps> = ({
               {validators.slice(0, 3).map((validator) => (
                 <div key={validator.id} className="validator-item">
                   <span className="validator-name">
-                    {validator.first_name && validator.last_name
-                      ? `${validator.first_name} ${validator.last_name}`
-                      : validator.username}
+                    {(() => {
+                      const firstName = validator.first_name?.trim();
+                      const lastName = validator.last_name?.trim();
+
+                      if (firstName && lastName) {
+                        return `${firstName} ${lastName}`;
+                      } else if (firstName) {
+                        return firstName;
+                      } else if (lastName) {
+                        return lastName;
+                      } else {
+                        return validator.username;
+                      }
+                    })()}
                   </span>
                   <span
                     className={`role-badge ${validator.role.toLowerCase().replace("_", "-")}`}

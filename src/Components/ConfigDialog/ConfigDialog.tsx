@@ -257,7 +257,13 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
                     <SiteComboBox
                       value={selectedSite}
                       placeholder="Choisir un site..."
-                      onChange={handleSiteSelect}
+                      onChange={(selected) => {
+                        // Handle both single and multi-select, but we only want single here
+                        const siteId = Array.isArray(selected)
+                          ? selected[0]
+                          : selected;
+                        handleSiteSelect(siteId);
+                      }}
                       inputId="config-site-select"
                       isClearable={true}
                     />

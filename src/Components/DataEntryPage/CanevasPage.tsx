@@ -6,7 +6,15 @@ import { useNavigate } from "react-router-dom";
 import { usePageTitle } from "hooks/usePageTitle";
 import Topbar from "Components/Topbar/Topbar";
 import { ConfigDialog } from "../ConfigDialog/ConfigDialog";
-import { Settings, RefreshCw, Clock, CheckCircle, XCircle } from "lucide-react";
+import {
+  Settings,
+  RefreshCw,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Search,
+  ChevronDown,
+} from "lucide-react";
 import { useGetSites } from "../../hooks/useGetSites";
 import { useGetUsers } from "../../hooks/useGetUsers";
 import { useGetSaisies } from "../../hooks/useGetSaisies";
@@ -27,9 +35,24 @@ export const CanevasPage = ({ user }: { user: User }) => {
   const [activeTab, setActiveTab] = useState<
     "en-cours" | "validees" | "rejetees"
   >("en-cours");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
 
   const navigate = useNavigate();
   const handleLogout = () => navigate("/");
+
+  // Toggle expand state for a site group
+  const toggleGroupExpand = (siteId: number) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(siteId)) {
+        newSet.delete(siteId);
+      } else {
+        newSet.add(siteId);
+      }
+      return newSet;
+    });
+  };
 
   // Fetch sites and users based on user role
   const {
@@ -37,8 +60,10 @@ export const CanevasPage = ({ user }: { user: User }) => {
     isLoading: sitesLoading,
     error: sitesError,
   } = useGetSites();
+
+  // Load all users to get creator names - needed for all roles to display creator info
   const { data: allUsers } = useGetUsers({
-    enabled: user?.role === "admin", // Only admins need all users data
+    enabled: Boolean(user?.role), // Enable for all authenticated users to get creator names
   });
 
   // For non-admin users, if sites API fails, create minimal site objects from user.sites
@@ -193,6 +218,19 @@ export const CanevasPage = ({ user }: { user: User }) => {
 
   // Group content based on active tab
   const tabContent = useMemo(() => {
+    // Filter function for search
+    const filterGroupsBySearch = (
+      groups: { site: Site; saisies: Saisie[] }[],
+    ) => {
+      if (!searchTerm.trim()) return groups;
+
+      return groups.filter(
+        (group) =>
+          group.site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          group.site.location?.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    };
+
     if (activeTab === "en-cours") {
       // For "en-cours", show saisies with en_attente/en_cours status grouped by site
       const currentSaisies = filteredSaisies.enCours;
@@ -234,9 +272,11 @@ export const CanevasPage = ({ user }: { user: User }) => {
       });
 
       const groupedData = Object.values(grouped);
+      const filteredGroupedData = filterGroupsBySearch(groupedData);
+
       console.log("[CanevasPage] Grouped result for en-cours:", {
-        groupCount: groupedData.length,
-        groups: groupedData.map((g) => ({
+        groupCount: filteredGroupedData.length,
+        groups: filteredGroupedData.map((g) => ({
           siteId: g.site.id,
           siteName: g.site.name,
           saisiesCount: g.saisies.length,
@@ -245,7 +285,7 @@ export const CanevasPage = ({ user }: { user: User }) => {
 
       return {
         type: "saisies" as const,
-        data: groupedData,
+        data: filteredGroupedData,
         count: currentSaisies.length,
       };
     } else {
@@ -290,9 +330,11 @@ export const CanevasPage = ({ user }: { user: User }) => {
       });
 
       const groupedData = Object.values(grouped);
+      const filteredGroupedData = filterGroupsBySearch(groupedData);
+
       console.log("[CanevasPage] Grouped result:", {
-        groupCount: groupedData.length,
-        groups: groupedData.map((g) => ({
+        groupCount: filteredGroupedData.length,
+        groups: filteredGroupedData.map((g) => ({
           siteId: g.site.id,
           siteName: g.site.name,
           saisiesCount: g.saisies.length,
@@ -301,16 +343,30 @@ export const CanevasPage = ({ user }: { user: User }) => {
 
       return {
         type: "saisies" as const,
-        data: groupedData,
+        data: filteredGroupedData,
         count: currentSaisies.length,
       };
     }
-  }, [activeTab, userSites, filteredSaisies, allSites]);
+  }, [activeTab, filteredSaisies, getSiteById, searchTerm]);
 
   // Get user information by ID
   const getUserById = (userId: number) => {
-    if (!allUsers) return null;
-    return allUsers.find((u) => u.id === userId);
+    if (!allUsers) {
+      console.log(`[CanevasPage] allUsers not loaded yet for user ${userId}`);
+      return null;
+    }
+    const user = allUsers.find((u) => u.id === userId);
+    if (!user) {
+      console.log(
+        `[CanevasPage] User ${userId} not found in users list:`,
+        allUsers.map((u) => ({
+          id: u.id,
+          username: u.username,
+          name: `${u.first_name || ""} ${u.last_name || ""}`.trim(),
+        })),
+      );
+    }
+    return user;
   };
 
   // Get validators for each site
@@ -374,23 +430,39 @@ export const CanevasPage = ({ user }: { user: User }) => {
             </p>
 
             <div className="page-actions">
-              <button
-                className="config-button"
-                onClick={() => setIsConfigDialogOpen(true)}
-                title="Configuration des sites"
-              >
-                <Settings size={20} />
-                Configuration
-              </button>
+              <div className="search-container">
+                <Search className="search-icon" size={16} />
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Rechercher par nom de site..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {user?.role === "admin" && (
+                <button
+                  className="config-button"
+                  onClick={() => setIsConfigDialogOpen(true)}
+                  title="Configuration des sites"
+                >
+                  <Settings size={20} />
+                  Configuration
+                </button>
+              )}
 
               <button
                 className="refresh-button"
                 onClick={() => refetchSaisies()}
-                title="Actualiser les données"
+                title="Actualiser "
                 disabled={saisiesLoading}
               >
-                <RefreshCw size={20} />
-                Actualiser
+                <RefreshCw
+                  size={20}
+                  className={saisiesLoading ? "animate-spin" : ""}
+                />
+                {saisiesLoading ? "Actualisation..." : "Actualiser"}
               </button>
             </div>
           </header>
@@ -476,31 +548,44 @@ export const CanevasPage = ({ user }: { user: User }) => {
               ) : (
                 <div className="saisie-groups">
                   {/* Render saisies grouped by site for all tabs */}
-                  {tabContent.data.map(({ site, saisies }) => (
-                    <div key={site.id} className="saisie-group">
-                      <div className="group-header">
-                        <h3 className="group-title">{site.name}</h3>
-                        <span className="group-count">
-                          {saisies.length} saisie
-                          {saisies.length > 1 ? "s" : ""}
-                        </span>
+                  {tabContent.data.map(({ site, saisies }) => {
+                    const isExpanded = expandedGroups.has(site.id);
+
+                    return (
+                      <div
+                        key={site.id}
+                        className={`saisie-group ${!isExpanded ? "collapsed" : ""}`}
+                      >
+                        <div
+                          className="group-header"
+                          onClick={() => toggleGroupExpand(site.id)}
+                        >
+                          <div className="group-header-content">
+                            <ChevronDown className="expand-icon" size={16} />
+                            <h3 className="group-title">{site.name}</h3>
+                          </div>
+                          <span className="group-count">
+                            {saisies.length} saisie
+                            {saisies.length > 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        <div className="group-content">
+                          {saisies.map((saisie) => (
+                            <SaisieCard
+                              key={`${site.id}-${saisie.id}`}
+                              site={site}
+                              saisie={saisie}
+                              validators={getValidatorsForSite(site.id)}
+                              userRole={user?.role || "agent"}
+                              creatorUser={
+                                getUserById(saisie.created_by) || undefined
+                              }
+                            />
+                          ))}
+                        </div>
                       </div>
-                      <div className="group-content">
-                        {saisies.map((saisie) => (
-                          <SaisieCard
-                            key={`${site.id}-${saisie.id}`}
-                            site={site}
-                            saisie={saisie}
-                            validators={getValidatorsForSite(site.id)}
-                            userRole={user?.role || "agent"}
-                            creatorUser={
-                              getUserById(saisie.created_by) || undefined
-                            }
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

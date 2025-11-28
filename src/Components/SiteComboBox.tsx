@@ -1,5 +1,5 @@
 import React from "react";
-import Select, { components, SingleValue } from "react-select";
+import Select, { components, SingleValue, MultiValue } from "react-select";
 import { useGetSites } from "../hooks/useGetSites";
 import type { Site } from "../types/site";
 
@@ -10,9 +10,10 @@ interface SiteOption {
 }
 
 interface SiteComboBoxProps {
-  // Selection props
-  value?: number | null;
-  onChange: (selected: number | null) => void;
+  // Selection props - support both single and multi-select
+  value?: number | number[] | null;
+  onChange: (selected: number | number[] | null) => void;
+  isMulti?: boolean;
 
   // UI props
   placeholder?: string;
@@ -29,6 +30,7 @@ interface SiteComboBoxProps {
 export function SiteComboBox({
   value,
   onChange,
+  isMulti = false,
   placeholder = "Choisir un site...",
   inputId,
   className,
@@ -129,15 +131,32 @@ export function SiteComboBox({
 
   // Handle value conversion for controlled component
   const getSelectValue = () => {
-    const selectedId = typeof value === "number" ? value : null;
-    return selectedId
-      ? siteOptions.find((option) => option.value === selectedId) || null
-      : null;
+    if (isMulti) {
+      const selectedIds = Array.isArray(value) ? value : [];
+      return selectedIds
+        .map((id) => siteOptions.find((option) => option.value === id))
+        .filter(Boolean) as SiteOption[];
+    } else {
+      const selectedId = typeof value === "number" ? value : null;
+      return selectedId
+        ? siteOptions.find((option) => option.value === selectedId) || null
+        : null;
+    }
   };
 
   // Handle change events
-  const handleChange = (selected: SingleValue<SiteOption>) => {
-    onChange(selected ? selected.value : null);
+  const handleChange = (
+    selected: SingleValue<SiteOption> | MultiValue<SiteOption>,
+  ) => {
+    if (isMulti) {
+      const multiSelected = selected as MultiValue<SiteOption>;
+      onChange(
+        multiSelected ? multiSelected.map((option) => option.value) : [],
+      );
+    } else {
+      const singleSelected = selected as SingleValue<SiteOption>;
+      onChange(singleSelected ? singleSelected.value : null);
+    }
   };
 
   if (isLoading) {
@@ -163,6 +182,7 @@ export function SiteComboBox({
       options={siteOptions}
       isDisabled={isDisabled}
       isClearable={isClearable}
+      isMulti={isMulti}
       components={{ Option, SingleValue }}
       placeholder={placeholder}
       value={getSelectValue()}

@@ -27,7 +27,7 @@ import type {
   PartialUpdateUserRequest,
 } from "../../types/user";
 import "./OrganisationPage.css";
-import { Building2, MapPin, Plus, Users, X } from "lucide-react";
+import { Building2, Plus, Users } from "lucide-react";
 import Sidebar from "Components/Sidebar/Sidebar";
 import Topbar from "Components/Topbar/Topbar";
 import { EntityManager } from "Components/EntityManager";
@@ -76,7 +76,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
 
   // --- USERS: now driven by backend hooks (no local hardcoded users) ---
-  const { data: backendUsers = [], isLoading: usersLoading } = useGetUsers();
+  const { data: backendUsers = [] } = useGetUsers();
   const createUser = useCreateUser();
   const partialUpdateUser = usePartialUpdateUser();
   const deleteUser = useDeleteUser();
@@ -129,14 +129,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   };
 
   // Helpers to map site name/id <-> id/name
-  // Accept either a site name (string) or an id (number) as input.
-  const siteNameToId = (input?: string | number) => {
-    if (typeof input === "number" && input > 0) return input;
-    if (!input) return 0;
-    const name = String(input);
-    return sites.find((s) => s.name === name)?.id ?? 0;
-  };
-
   const siteIdToName = (id?: number) =>
     sites.find((s) => s.id === id)?.name ?? "";
 
@@ -149,6 +141,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
       lastName: (u.last_name as string) || "",
       email: u.email || "",
       site: siteIdToName(u.sites?.[0]), // assume single-site users; show site name or empty
+      sites: u.sites || [], // ✅ Map the full sites array
       role: backendRoleToUI(u.role),
       password: undefined,
     };
@@ -159,7 +152,7 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   // Derived list for UI components
   const uiUsers = useMemo(
     () => backendUsers.map(backendToUI),
-    [backendUsers, sites],
+    [backendUsers, sites, backendToUI],
   );
 
   // Filter users based on search (can reuse existing UserManager filtering but keep this for other uses)
@@ -183,7 +176,37 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
     role: "user",
   });
 
+  // Helper function to check if user can manage other users
+  const canManageUsers =
+    currentUser?.role === "admin" || currentUser?.role === "superuser";
+
+  // Debug function to check authentication and user info
+  const debugUserInfo = () => {
+    console.log("🔍 [DEBUG] Current User Info:", {
+      currentUser,
+      role: currentUser?.role,
+      canManageUsers,
+      authToken: localStorage.getItem("authToken"),
+      accessToken: localStorage.getItem("ACCESS_TOKEN"),
+      refreshToken: localStorage.getItem("refreshToken"),
+    });
+  };
+
+  // Add debug info when component mounts or currentUser changes
+  React.useEffect(() => {
+    debugUserInfo();
+  }, [currentUser, canManageUsers]);
+
   const handleOpenAddUserDialog = () => {
+    // Check permissions before opening dialog
+    if (!canManageUsers) {
+      alert(
+        "❌ Permission denied: Only Admins and Superusers can create users. Current user role: " +
+          currentUser?.role,
+      );
+      return;
+    }
+
     // Reset form to clean state when opening the dialog
     setNewUser(getCleanUserState());
     setIsAddDialogOpen(true);
@@ -196,11 +219,31 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
         setIsAddDialogOpen(false);
       },
       onError: (err) => {
-        alert("Failed to create user");
+        console.error("Failed to create user:", err);
+        // Show more detailed error message
+        if (err?.message?.includes("permission")) {
+          alert(
+            "❌ Permission denied: Only Admins and Superusers can create users. Current user role: " +
+              currentUser?.role,
+          );
+        } else {
+          alert(
+            "❌ Failed to create user: " + (err?.message || "Unknown error"),
+          );
+        }
       },
     });
   };
   const handleEditUser = (u: UserData) => {
+    // Check permissions before opening dialog
+    if (!canManageUsers) {
+      alert(
+        "❌ Permission denied: Only Admins and Superusers can edit users. Current user role: " +
+          currentUser?.role,
+      );
+      return;
+    }
+
     // open edit dialog with a cloned UI user object
     setUserBeingEdited({ ...u });
     setIsEditDialogOpen(true);
@@ -209,28 +252,58 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   const handleSaveUser = async () => {
     if (!userBeingEdited) return;
 
-    // prepare partial payload using backend field names
-    const siteId = userBeingEdited.site
-      ? siteNameToId(userBeingEdited.site)
-      : undefined;
+    console.log("🔍 [handleSaveUser] Starting user update:", {
+      userBeingEdited,
+      currentUserRole: currentUser?.role,
+      canManageUsers,
+    });
+
+    // Use the sites array directly instead of converting from site string
+    const sitesArray =
+      userBeingEdited.sites && userBeingEdited.sites.length > 0
+        ? userBeingEdited.sites
+        : [];
+
     const payload: PartialUpdateUserRequest = {
       username: userBeingEdited.username,
       role: uiRoleToBackend(userBeingEdited.role),
-      sites: siteId ? [siteId] : [],
+      sites: sitesArray, // Use the full sites array
       email: userBeingEdited.email,
       first_name: userBeingEdited.firstName,
       last_name: userBeingEdited.lastName,
     };
 
+    console.log("🔍 [handleSaveUser] Payload:", payload);
+    console.log(
+      "🔍 [handleSaveUser] Auth token:",
+      localStorage.getItem("authToken"),
+    );
+
     partialUpdateUser.mutate(
       { userId: userBeingEdited.id, userData: payload },
       {
         onSuccess: () => {
+          console.log("✅ [handleSaveUser] User updated successfully");
           setUserBeingEdited(null);
           setIsEditDialogOpen(false);
         },
         onError: (err) => {
-          alert("Failed to update user");
+          console.error("❌ [handleSaveUser] Failed to update user:", err);
+          console.error("❌ [handleSaveUser] Error details:", {
+            message: err?.message,
+            error: err,
+          });
+          // Show more detailed error message
+          if (err?.message?.includes("permission")) {
+            alert(
+              "❌ Permission denied: Only Admins and Superusers can edit users. Current user role: " +
+                currentUser?.role,
+            );
+          } else {
+            alert(
+              "❌ Failed to update user: " + (err?.message || "Unknown error"),
+            );
+          }
         },
       },
     );
@@ -239,7 +312,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
   const handleDeleteUser = async (userId: number) => {
     // Find the user in our local state to verify
     const userToDelete = uiUsers.find((u) => u.id === userId);
-    const backendUser = backendUsers.find((u) => u.id === userId);
     if (!userToDelete) {
       alert("User not found in local data!");
       return;
@@ -334,42 +406,6 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
     }
   };
 
-  const formatSiteGroupField = createEntityFormatter(sites, uiUsers as any);
-
-  const Badge = ({
-    children,
-    className = "",
-  }: {
-    children: React.ReactNode;
-    className?: string;
-  }) => {
-    return <span className={`badge ${className}`}>{children}</span>;
-  };
-
-  const entityConfigs = [
-    {
-      id: "site-groups",
-      title: "Groupes de Site",
-      fields: [
-        { key: "name", label: "Nom de l'unité", placeholder: "Entrer le nom" },
-        {
-          key: "description",
-          label: "Description",
-          placeholder: "Entrer la description",
-        },
-        { key: "type", label: "Type", placeholder: "Interne / Externe" },
-        { key: "siteId", label: "Site", placeholder: "ID du site" },
-        { key: "members", label: "Membres", placeholder: "Liste des membres" },
-      ],
-      // show site groups if you need them; otherwise you can show `sites` here
-      items: siteGroups,
-      newItem: newGroup,
-      setNewItem: setNewGroup as any,
-      onAdd: handleAddGroup,
-      onDelete: handleDeleteGroup,
-    },
-  ];
-
   const handleEditSite = (site: Site) => {
     setSelectedSite(site);
     setIsEditSiteDialogOpen(true);
@@ -404,7 +440,11 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
               id="users"
               title="Gestion d'Utilisateur"
               description="Administration des comptes utilisateurs et permissions"
-              icon={<span className="icon">👥</span>}
+              icon={
+                <span className="icon">
+                  <Users size={30} color="#6a0dad" />
+                </span>
+              }
               color="purple"
               metricValue={uiUsers.length}
               metricLabel="Utilisateurs actifs"
@@ -420,6 +460,8 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
                 onAdd={handleOpenAddUserDialog}
                 onDelete={handleDeleteUser}
                 onEdit={handleEditUser}
+                sites={sites}
+                canManageUsers={canManageUsers}
               />
 
               {/* ADD USER DIALOG */}
@@ -457,9 +499,13 @@ const OrganisationPage = ({ user: currentUser }: OrganisationPageProps) => {
             {/* Organisation Panel */}
             <ExpandablePanel
               id="org"
-              title="Unités"
+              title="Sites"
               description="Gestion des sites"
-              icon={<span className="icon">🏢</span>}
+              icon={
+                <span className="icon">
+                  <Building2 size={30} color="#0024a4ff" />
+                </span>
+              }
               color="blue"
               metricValue={sites.length}
               metricLabel="Unités totales"

@@ -1,5 +1,6 @@
 import React from "react";
 import { X } from "lucide-react";
+import { SiteComboBox } from "./SiteComboBox";
 import type { Site, NewUser } from "../types/organisation";
 import type { CreateUserRequest } from "../types/user";
 
@@ -45,14 +46,16 @@ export function AddUserDialog({
     }
 
     const sitesArr: number[] = Array.isArray(currentUser.sites)
-      ? (currentUser.sites as Array<any>).map((s) => Number(s))
+      ? currentUser.sites.map((site) =>
+          typeof site === "number" ? site : Number(site),
+        )
       : currentUser.site
         ? [Number(currentUser.site)]
         : [];
 
     if (!username || !password || !role || sitesArr.length === 0) {
       setValidationError(
-        "Please fill required fields (username, password, role, site).",
+        "Please fill required fields (username, password, role, sites).",
       );
       return;
     }
@@ -165,28 +168,25 @@ export function AddUserDialog({
                 />
               </div>
 
-              <div className="form-field">
-                <label htmlFor="user-site">Site</label>
-                <select
-                  id="user-site"
-                  name="user-site-field"
-                  value={newUser.site ?? ""}
-                  onChange={(e) =>
+              <div className="form-field full-width">
+                <label htmlFor="user-sites">Sites</label>
+                <SiteComboBox
+                  inputId="user-sites"
+                  isMulti={true}
+                  value={(newUser.sites || []) as number[]}
+                  onChange={(selectedSites) => {
+                    const sitesArray = Array.isArray(selectedSites)
+                      ? selectedSites
+                      : [];
                     setNewUser({
                       ...newUser,
-                      site: Number(e.target.value),
-                      sites: [Number(e.target.value)],
-                    })
-                  }
-                  autoComplete="off"
-                >
-                  <option value="">Select site</option>
-                  {sites.map((site) => (
-                    <option key={site.id} value={site.id}>
-                      {site.name}
-                    </option>
-                  ))}
-                </select>
+                      sites: sitesArray,
+                      site: sitesArray.length > 0 ? sitesArray[0] : undefined,
+                    });
+                  }}
+                  placeholder="Sélectionner les sites..."
+                  isClearable={true}
+                />
               </div>
 
               <div className="form-field">

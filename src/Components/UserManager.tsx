@@ -8,6 +8,7 @@ interface User {
   lastName: string;
   email: string;
   site: string;
+  sites?: number[]; // Add sites array support
   role: string;
 }
 
@@ -18,6 +19,8 @@ interface UserManagerProps {
   onAdd: () => void;
   onDelete: (id: number) => void;
   onEdit: (user: User) => void;
+  sites?: Array<{ id: number; name: string }>; // Add sites prop to get site names
+  canManageUsers?: boolean; // Add permission check prop
 }
 
 export function UserManager({
@@ -27,16 +30,33 @@ export function UserManager({
   onAdd,
   onDelete,
   onEdit,
+  sites = [],
+  canManageUsers = false,
 }: UserManagerProps) {
+  // Helper function to get site name by ID
+  const getSiteName = (siteId: number): string => {
+    const site = sites.find((s) => s.id === siteId);
+    return site ? site.name : `Site ${siteId}`;
+  };
   const filteredUsers = useMemo(
     () =>
-      users.filter((u) =>
-        [u.username, u.firstName, u.lastName, u.email, u.site, u.role]
+      users.filter((u) => {
+        const searchText = [
+          u.username,
+          u.firstName,
+          u.lastName,
+          u.email,
+          u.site,
+          u.role,
+          // Include sites array in search with actual site names
+          ...(u.sites ? u.sites.map((siteId) => getSiteName(siteId)) : []),
+        ]
           .join(" ")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()),
-      ),
-    [users, searchQuery],
+          .toLowerCase();
+
+        return searchText.includes(searchQuery.toLowerCase());
+      }),
+    [users, searchQuery, sites, getSiteName],
   );
 
   return (
@@ -53,7 +73,16 @@ export function UserManager({
             />
           </div>
 
-          <button className="btn-primary" onClick={onAdd}>
+          <button
+            className="btn-primary"
+            onClick={onAdd}
+            disabled={!canManageUsers}
+            title={
+              canManageUsers
+                ? "Ajouter un utilisateur"
+                : "Seuls les Admins et Superusers peuvent ajouter des utilisateurs"
+            }
+          >
             <Plus className="w-4 h-4 mr-2" /> Ajouter
           </button>
         </div>
@@ -93,7 +122,31 @@ export function UserManager({
                   {user.firstName} {user.lastName}
                 </td>
                 <td>{user.email}</td>
-                <td>{user.site}</td>
+                <td>
+                  {/* Display multiple sites if available, otherwise show single site */}
+                  {user.sites && user.sites.length > 0 ? (
+                    <div
+                      style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}
+                    >
+                      {user.sites.map((siteId, index) => (
+                        <span
+                          key={siteId}
+                          style={{
+                            fontSize: "11px",
+                            padding: "2px 6px",
+                            backgroundColor: "#e5e7eb",
+                            borderRadius: "3px",
+                            color: "#374151",
+                          }}
+                        >
+                          {getSiteName(siteId)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    user.site
+                  )}
+                </td>
                 <td>
                   <span
                     className={`role-badge ${user.role
@@ -108,6 +161,12 @@ export function UserManager({
                     <button
                       className="btn-icon btn-edit"
                       onClick={() => onEdit(user)}
+                      disabled={!canManageUsers}
+                      title={
+                        canManageUsers
+                          ? "Éditer l'utilisateur"
+                          : "Seuls les Admins et Superusers peuvent éditer des utilisateurs"
+                      }
                     >
                       <Edit className="w-4 h-4" />
                     </button>
@@ -116,6 +175,12 @@ export function UserManager({
                       onClick={() => {
                         onDelete(user.id);
                       }}
+                      disabled={!canManageUsers}
+                      title={
+                        canManageUsers
+                          ? "Supprimer l'utilisateur"
+                          : "Seuls les Admins et Superusers peuvent supprimer des utilisateurs"
+                      }
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

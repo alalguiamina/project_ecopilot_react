@@ -22,7 +22,8 @@ export interface UserData {
   firstName: string;
   lastName: string;
   email: string;
-  site: string;
+  site: string; // Keep for backward compatibility with display
+  sites?: number[]; // Add sites array for multi-site support
   password?: string;
   role: string;
 }
@@ -33,8 +34,8 @@ export interface NewUser {
   lastName: string;
   email: string;
   password: string;
-  // allow site to be number (id) or string (name) in UI; include optional sites array to match backend payload
+  // allow site to be number (id) or string (name) in UI; sites array should be numbers for backend compatibility
   site?: number | string;
-  sites?: Array<number | string>;
+  sites?: number[];
   role: string;
 }

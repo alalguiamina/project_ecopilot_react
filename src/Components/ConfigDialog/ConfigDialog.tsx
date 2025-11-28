@@ -12,6 +12,7 @@ import { useGetPostesEmission } from "../../hooks/useGetPostesEmission";
 import { useUpdateSiteConfig } from "../../hooks/useUpdateSiteConfig";
 import { useGetPosteIndicateurs } from "../../hooks/useGetPosteIndicateurs";
 import { useGetSiteConfig } from "../../hooks/useGetSiteConfig";
+import { useGetDetailedSiteConfig } from "../../hooks/useGetDetailedSiteConfig";
 import type { PosteEmission } from "../../types/postesEmission";
 import type { PosteIndicateur } from "../../types/postesIndicateurs";
 import "./ConfigDialog.css";
@@ -29,7 +30,10 @@ interface SiteConfig {
   siteId: number;
   postesConfig: {
     [posteId: number]: {
-      indicateurs: number[];
+      indicateurs: {
+        id: number;
+        obligatoire: boolean;
+      }[];
     };
   };
 }
@@ -56,6 +60,15 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   const { data: postes, isLoading: postesLoading } = useGetPostesEmission();
   const updateSiteConfigMutation = useUpdateSiteConfig();
 
+  // Load existing site configuration using the dedicated hook
+  const { data: siteConfigData, isLoading: configLoading } =
+    useGetSiteConfig(selectedSite);
+  const existingConfig = siteConfigData?.config_json;
+
+  // Load detailed site configuration with obligatoire flags
+  const { data: detailedSiteConfig, isLoading: detailedConfigLoading } =
+    useGetDetailedSiteConfig(selectedSite);
+
   // Reset all form state when dialog opens
   useEffect(() => {
     if (isOpen) {
@@ -69,11 +82,6 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
       setPosteIndicateursData({});
     }
   }, [isOpen]);
-
-  // Load existing site configuration using the dedicated hook
-  const { data: siteConfigData, isLoading: configLoading } =
-    useGetSiteConfig(selectedSite);
-  const existingConfig = siteConfigData?.config_json;
 
   // Update the useEffect to load existing config
   useEffect(() => {
@@ -99,15 +107,29 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
         };
       });
 
-      // If we have existing config from the hook, populate it
-      if (existingConfig && Array.isArray(existingConfig)) {
+      // Use detailed config if available, fall back to basic config
+      if (detailedSiteConfig?.organized_configs) {
+        // Use detailed config with obligatoire flags
+        detailedSiteConfig.organized_configs.forEach((config) => {
+          const posteId = config.poste;
+          if (!initialConfig.postesConfig[posteId]) {
+            initialConfig.postesConfig[posteId] = { indicateurs: [] };
+          }
+          initialConfig.postesConfig[posteId].indicateurs = config.indicateurs;
+        });
+      } else if (existingConfig && Array.isArray(existingConfig)) {
+        // Fall back to basic config
         existingConfig.forEach((config: any) => {
           const posteId = config.poste;
           if (!initialConfig.postesConfig[posteId]) {
             initialConfig.postesConfig[posteId] = { indicateurs: [] };
           }
-          initialConfig.postesConfig[posteId].indicateurs =
-            config.indicateurs || [];
+          // Convert simple array to object array with obligatoire flag
+          const indicateurs = (config.indicateurs || []).map((id: number) => ({
+            id,
+            obligatoire: false, // Default to optional for basic config
+          }));
+          initialConfig.postesConfig[posteId].indicateurs = indicateurs;
         });
       }
 
@@ -115,7 +137,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
     });
 
     setPosteIndicateursData({});
-  }, [selectedSite, postes, existingConfig]);
+  }, [selectedSite, postes, existingConfig, detailedSiteConfig]);
 
   const handleSiteSelect = (siteId: number | null) => {
     setSelectedSite(siteId);
@@ -152,18 +174,49 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
         newConfig.postesConfig[posteId].indicateurs || [];
       const newIndicateurs = [...currentIndicateurs];
 
-      const index = newIndicateurs.indexOf(indicateurId);
+      const index = newIndicateurs.findIndex((ind) => ind.id === indicateurId);
 
       if (index > -1) {
         newIndicateurs.splice(index, 1);
       } else {
-        newIndicateurs.push(indicateurId);
+        newIndicateurs.push({ id: indicateurId, obligatoire: false });
       }
 
       // ✅ Create entirely new object for this poste
       newConfig.postesConfig[posteId] = {
         indicateurs: newIndicateurs,
       };
+
+      return newConfig;
+    });
+  };
+
+  const handleObligatoireToggle = (posteId: number, indicateurId: number) => {
+    setSiteConfig((prev) => {
+      const newConfig: SiteConfig = {
+        siteId: prev.siteId,
+        postesConfig: { ...prev.postesConfig },
+      };
+
+      if (!newConfig.postesConfig[posteId]) return prev;
+
+      const currentIndicateurs = [
+        ...newConfig.postesConfig[posteId].indicateurs,
+      ];
+      const index = currentIndicateurs.findIndex(
+        (ind) => ind.id === indicateurId,
+      );
+
+      if (index > -1) {
+        currentIndicateurs[index] = {
+          ...currentIndicateurs[index],
+          obligatoire: !currentIndicateurs[index].obligatoire,
+        };
+
+        newConfig.postesConfig[posteId] = {
+          indicateurs: currentIndicateurs,
+        };
+      }
 
       return newConfig;
     });
@@ -176,10 +229,10 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
       const configPayload = {
         configs: Object.entries(siteConfig.postesConfig).flatMap(
           ([posteId, config]) =>
-            config.indicateurs.map((indicateurId) => ({
-              type_indicateur_id: indicateurId,
+            config.indicateurs.map((indicateur) => ({
+              type_indicateur_id: indicateur.id,
               poste_emission_id: parseInt(posteId),
-              obligatoire: true,
+              obligatoire: indicateur.obligatoire,
             })),
         ),
       };
@@ -205,7 +258,8 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   if (!isOpen) return null;
 
   // Update isLoading check
-  const isLoading = sitesLoading || postesLoading || configLoading;
+  const isLoading =
+    sitesLoading || postesLoading || configLoading || detailedConfigLoading;
 
   return (
     <div className="config-dialog-overlay">
@@ -323,6 +377,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
                         onToggleExpansion={() => togglePosteExpansion(poste.id)}
                         siteConfig={siteConfig}
                         onIndicateurToggle={handleIndicateurToggle}
+                        onObligatoireToggle={handleObligatoireToggle}
                         posteIndicateursData={posteIndicateursData}
                         setPosteIndicateursData={setPosteIndicateursData}
                       />
@@ -363,6 +418,7 @@ interface PostePanelProps {
   onToggleExpansion: () => void;
   siteConfig: SiteConfig;
   onIndicateurToggle: (posteId: number, indicateurId: number) => void;
+  onObligatoireToggle: (posteId: number, indicateurId: number) => void;
   posteIndicateursData: PosteIndicateursData;
   setPosteIndicateursData: React.Dispatch<
     React.SetStateAction<PosteIndicateursData>
@@ -375,6 +431,7 @@ const PostePanel: React.FC<PostePanelProps> = ({
   onToggleExpansion,
   siteConfig,
   onIndicateurToggle,
+  onObligatoireToggle,
   posteIndicateursData,
   setPosteIndicateursData,
 }) => {
@@ -399,8 +456,17 @@ const PostePanel: React.FC<PostePanelProps> = ({
 
   const isIndicateurSelected = (indicateurId: number) => {
     return Boolean(
-      siteConfig.postesConfig[poste.id]?.indicateurs?.includes(indicateurId),
+      siteConfig.postesConfig[poste.id]?.indicateurs?.some(
+        (ind) => ind.id === indicateurId,
+      ),
     );
+  };
+
+  const isIndicateurObligatoire = (indicateurId: number) => {
+    const indicateur = siteConfig.postesConfig[poste.id]?.indicateurs?.find(
+      (ind) => ind.id === indicateurId,
+    );
+    return indicateur?.obligatoire || false;
   };
 
   const handleRetry = () => {
@@ -477,21 +543,37 @@ const PostePanel: React.FC<PostePanelProps> = ({
           {indicateurs && indicateurs.length > 0 && (
             <div className="indicateurs-grid">
               {indicateurs.map((indicateur: PosteIndicateur) => (
-                <label key={indicateur.id} className="indicateur-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={isIndicateurSelected(indicateur.id)}
-                    onChange={() => onIndicateurToggle(poste.id, indicateur.id)}
-                  />
-                  <div className="checkbox-content">
-                    <span className="indicateur-name">
-                      {indicateur.code} - {indicateur.libelle}
-                    </span>
-                    <span className="indicateur-description">
-                      Unité par défaut: {indicateur.unite_default}
-                    </span>
-                  </div>
-                </label>
+                <div key={indicateur.id} className="indicateur-item">
+                  <label className="indicateur-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={isIndicateurSelected(indicateur.id)}
+                      onChange={() =>
+                        onIndicateurToggle(poste.id, indicateur.id)
+                      }
+                    />
+                    <div className="checkbox-content">
+                      <span className="indicateur-name">
+                        {indicateur.code} - {indicateur.libelle}
+                      </span>
+                      <span className="indicateur-description">
+                        Unité par défaut: {indicateur.unite_default}
+                      </span>
+                    </div>
+                  </label>
+                  {isIndicateurSelected(indicateur.id) && (
+                    <label className="obligatoire-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={isIndicateurObligatoire(indicateur.id)}
+                        onChange={() =>
+                          onObligatoireToggle(poste.id, indicateur.id)
+                        }
+                      />
+                      <span className="obligatoire-label">Obligatoire *</span>
+                    </label>
+                  )}
+                </div>
               ))}
             </div>
           )}

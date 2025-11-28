@@ -6,6 +6,7 @@ import { useGetTypeIndicateurs } from "../../hooks/useGetTypeIndicators";
 import { useCreateSaisie } from "../../hooks/useCreateSaisie";
 import { useGetSaisies } from "../../hooks/useGetSaisies";
 import { useUpdateSaisie } from "../../hooks/useUpdateSaisie";
+import { useGetDetailedSiteConfig } from "../../hooks/useGetDetailedSiteConfig";
 import type { Site } from "../../types/site";
 import type { TypeIndicateur } from "../../types/typeIndicateurs";
 import type {
@@ -35,7 +36,7 @@ interface PosteWithIndicators {
     id: number;
     name: string;
   };
-  indicators: TypeIndicateur[];
+  indicators: Array<TypeIndicateur & { obligatoire?: boolean }>;
 }
 
 export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
@@ -87,6 +88,9 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
   // Fetch data
   const { data: postesEmission } = useGetPostesEmission();
   const { data: typeIndicateurs } = useGetTypeIndicateurs();
+  const { data: detailedSiteConfig } = useGetDetailedSiteConfig(
+    site?.id || null,
+  );
 
   // Fetch existing saisies for this site/month/year
   const {
@@ -163,10 +167,11 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
 
   // Organize indicators by poste
   const posteWithIndicators = useMemo((): PosteWithIndicators[] => {
-    if (!postesEmission || !typeIndicateurs || !site.config_json) return [];
+    if (!postesEmission || !typeIndicateurs) return [];
 
-    // Parse the site configuration
-    const siteConfig = site.config_json;
+    // Use detailed config if available, fall back to basic config
+    const siteConfig =
+      detailedSiteConfig?.organized_configs || site.config_json;
     if (!Array.isArray(siteConfig)) return [];
 
     // Create a map of indicators by ID for quick lookup
@@ -186,13 +191,32 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
         const poste = postesMap.get(config.poste);
         if (!poste) return null;
 
-        const indicators = config.indicateurs
-          .map((indicatorId: number) => indicatorsMap.get(indicatorId))
-          .filter(
-            (
-              indicator: TypeIndicateur | undefined,
-            ): indicator is TypeIndicateur => Boolean(indicator),
-          );
+        // Handle both detailed config (with obligatoire) and basic config
+        const configIndicateurs = Array.isArray(config.indicateurs)
+          ? config.indicateurs
+          : [];
+
+        const indicators = configIndicateurs
+          .map((indicatorItem: any) => {
+            // Handle both formats: number (basic) or object (detailed)
+            const indicatorId =
+              typeof indicatorItem === "number"
+                ? indicatorItem
+                : indicatorItem.id;
+            const obligatoire =
+              typeof indicatorItem === "object"
+                ? indicatorItem.obligatoire
+                : false;
+
+            const indicator = indicatorsMap.get(indicatorId);
+            if (!indicator) return null;
+
+            return {
+              ...indicator,
+              obligatoire,
+            };
+          })
+          .filter(Boolean);
 
         return {
           poste: {
@@ -204,7 +228,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       })
       .filter((item): item is PosteWithIndicators => Boolean(item))
       .filter((item) => item.indicators.length > 0);
-  }, [postesEmission, typeIndicateurs, site.config_json]);
+  }, [postesEmission, typeIndicateurs, site.config_json, detailedSiteConfig]);
 
   // Check for existing saisie and load data
   useEffect(() => {
@@ -473,10 +497,11 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
   };
 
   const hasRequiredFields = () => {
-    // All configured indicators are considered required for now
+    // Only check indicators that are marked as obligatory
     return posteWithIndicators.some((item) =>
       item.indicators.some(
-        (indicator) => !indicatorData[indicator.id]?.value?.trim(),
+        (indicator) =>
+          indicator.obligatoire && !indicatorData[indicator.id]?.value?.trim(),
       ),
     );
   };
@@ -597,7 +622,9 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
                             <span className="indicator-name">
                               {indicator.libelle}
                             </span>
-                            <span className="required-badge">*</span>
+                            {indicator.obligatoire && (
+                              <span className="required-badge">*</span>
+                            )}
                           </div>
                         </div>
                         <div className="indicator-input-container">

@@ -1,32 +1,27 @@
 {
   "files": {
-    "main.css": "/project_ecopilot_react/static/css/main.ee5094b4.css",
-    "main.js": "/project_ecopilot_react/static/js/main.6d12c4ef.js",
-    "static/js/488.196088cc.chunk.js": "/project_ecopilot_react/static/js/488.196088cc.chunk.js",
+    "main.css": "/project_ecopilot_react/static/css/main.431387f2.css",
+    "main.js": "/project_ecopilot_react/static/js/main.4ef09b07.js",
+    "static/media/backgroundlogin.jpg": "/project_ecopilot_react/static/media/backgroundlogin.502484a82129d2a8a31d.jpg",
     "static/media/target.png": "/project_ecopilot_react/static/media/target.1f12d23db7d13f6d30e5.png",
     "static/media/award.png": "/project_ecopilot_react/static/media/award.153aeab1f5fe56f65fc3.png",
     "static/media/settings.png": "/project_ecopilot_react/static/media/settings.6f420233a3be1c8394cb.png",
-    "static/media/social.png": "/project_ecopilot_react/static/media/social.de5336e0232b5539ec7b.png",
     "static/media/leaf.png": "/project_ecopilot_react/static/media/leaf.6c80ebdbd1c787c18c43.png",
+    "static/media/validation.png": "/project_ecopilot_react/static/media/validation.3f93d01af35c1a6cfb6f.png",
     "static/media/organisation.png": "/project_ecopilot_react/static/media/organisation.9c03622b4c4efa6503a3.png",
+    "static/media/canevas.png": "/project_ecopilot_react/static/media/canevas.3ed6c71c39aad9430d0e.png",
     "static/media/users.png": "/project_ecopilot_react/static/media/users.cc0332dbd05f7fd4ff21.png",
-    "static/media/production.png": "/project_ecopilot_react/static/media/production.6bdca0856c074280bd83.png",
-    "static/media/bolt.png": "/project_ecopilot_react/static/media/bolt.4440275a5bef38787456.png",
-    "static/media/water.png": "/project_ecopilot_react/static/media/water.156c1cffea045f59b58b.png",
     "static/media/report.png": "/project_ecopilot_react/static/media/report.cb98048d59256fe68c65.png",
     "static/media/password.png": "/project_ecopilot_react/static/media/password.afd8da6a2989f5778ae4.png",
     "static/media/chart1.png": "/project_ecopilot_react/static/media/chart1.1a6704c9a92b582a98ec.png",
     "static/media/pen.png": "/project_ecopilot_react/static/media/pen.d226aa18c78b2fe5ab2d.png",
-    "static/media/trash.png": "/project_ecopilot_react/static/media/trash.cf91f965f769023b84d1.png",
-    "static/media/delete.png": "/project_ecopilot_react/static/media/delete.a1c5cf91dbb740dcae22.png",
     "static/media/chart.png": "/project_ecopilot_react/static/media/chart.781ef5a0b21cf67a87a7.png",
     "index.html": "/project_ecopilot_react/index.html",
-    "main.ee5094b4.css.map": "/project_ecopilot_react/static/css/main.ee5094b4.css.map",
-    "main.6d12c4ef.js.map": "/project_ecopilot_react/static/js/main.6d12c4ef.js.map",
-    "488.196088cc.chunk.js.map": "/project_ecopilot_react/static/js/488.196088cc.chunk.js.map"
+    "main.431387f2.css.map": "/project_ecopilot_react/static/css/main.431387f2.css.map",
+    "main.4ef09b07.js.map": "/project_ecopilot_react/static/js/main.4ef09b07.js.map"
   },
   "entrypoints": [
-    "static/css/main.ee5094b4.css",
-    "static/js/main.6d12c4ef.js"
+    "static/css/main.431387f2.css",
+    "static/js/main.4ef09b07.js"
   ]
 }

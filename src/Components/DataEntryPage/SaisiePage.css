@@ -208,8 +208,35 @@
 .site-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.75rem;
   padding-top: 1rem;
   border-top: 1px solid #f3f4f6;
+}
+
+.btn-excel {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-excel:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(5, 150, 105, 0.3);
+}
+
+.btn-excel:active {
+  transform: translateY(0);
 }
 
 .btn-saisie {
@@ -350,7 +377,195 @@
   margin-bottom: 0.5rem;
 }
 
-/* ================ TABS STYLES ================ */
+/* ================ FILE UPLOAD SECTION ================ */
+.file-upload-section {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem 2rem;
+  flex-shrink: 0;
+}
+
+.upload-container {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.upload-header {
+  text-align: center;
+  margin-bottom: 0.7rem;
+}
+
+.upload-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.upload-subtitle {
+  color: #6b7280;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.upload-area {
+  border: 2px dashed #d1d5db;
+  border-radius: 7px;
+  padding: 0.7rem;
+  transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+  border-color: #3b82f6;
+  background-color: #f8fafc;
+}
+
+.upload-dropzone {
+  text-align: center;
+}
+
+.file-input {
+  display: none;
+}
+
+.upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  padding: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.upload-label:hover {
+  transform: translateY(-2px);
+}
+
+.upload-icon {
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #eff6ff;
+  border-radius: 50%;
+  margin-bottom: 0.25rem;
+}
+
+.upload-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.upload-formats {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.file-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.file-icon {
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #eff6ff;
+  border-radius: 6px;
+}
+
+.file-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.file-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1rem;
+}
+
+.file-size {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.file-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-upload {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-upload:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-upload:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-remove {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-remove:hover:not(:disabled) {
+  background: #e5e7eb;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
+.btn-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ================ EXISTING STYLES ================ */
 .saisie-tabs {
   flex: 1;
   display: flex;

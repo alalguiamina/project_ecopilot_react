@@ -26,6 +26,8 @@ interface ValidatorInfo {
 export const SaisiePage = ({ user }: SaisiePageProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
 
   // Logout handler
@@ -176,6 +178,66 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
     setSelectedSite(null);
   };
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!uploadedFile) return;
+
+    setIsUploading(true);
+    try {
+      // TODO: Implement file upload logic here
+      console.log("Uploading file:", uploadedFile.name);
+
+      // Simulate upload delay
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      alert(`Fichier "${uploadedFile.name}" téléversé avec succès!`);
+      setUploadedFile(null);
+
+      // Reset file input
+      const fileInput = document.getElementById(
+        "file-upload",
+      ) as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Erreur lors du téléversement du fichier.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    const fileInput = document.getElementById(
+      "file-upload",
+    ) as HTMLInputElement;
+    if (fileInput) fileInput.value = "";
+  };
+
+  const handleExcelDownload = (siteId: number) => {
+    // TODO: Implement Excel template download logic
+    console.log("Downloading Excel template for site:", siteId);
+
+    // Simulate download
+    const site = userSites.find((s) => s.id === siteId);
+    if (site) {
+      alert(
+        `Téléchargement du modèle Excel pour le site "${site.name}" en cours...`,
+      );
+
+      // Here you would typically:
+      // 1. Call an API endpoint to generate the Excel template
+      // 2. Download the file
+      // Example: window.open(`/api/sites/${siteId}/excel-template`, '_blank');
+    }
+  };
+
   if (
     (user.role === "admin" && sitesLoading) ||
     (user.role === "admin" && usersLoading)
@@ -243,6 +305,70 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
               )}
           </header>
 
+          {/* File Upload Section */}
+          <div className="file-upload-section">
+            <div className="upload-container">
+              <div className="upload-header">
+                <h3 className="upload-title">Téléverser un fichier</h3>
+              </div>
+
+              <div className="upload-area">
+                {!uploadedFile ? (
+                  <div className="upload-dropzone">
+                    <input
+                      type="file"
+                      id="file-upload"
+                      className="file-input"
+                      onChange={handleFileSelect}
+                      accept=".xlsx,.xls,.csv,"
+                    />
+                    <label htmlFor="file-upload" className="upload-label">
+                      <div className="upload-icon">
+                        <Database size={32} />
+                      </div>
+                      <span className="upload-text">
+                        Cliquez pour sélectionner un fichier
+                      </span>
+                      <span className="upload-formats">
+                        Formats acceptés: CSV
+                      </span>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="file-selected">
+                    <div className="file-info">
+                      <div className="file-icon">
+                        <Database size={24} />
+                      </div>
+                      <div className="file-details">
+                        <span className="file-name">{uploadedFile.name}</span>
+                        <span className="file-size">
+                          {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                      </div>
+                    </div>
+                    <div className="file-actions">
+                      <button
+                        className="btn-upload"
+                        onClick={handleFileUpload}
+                        disabled={isUploading}
+                      >
+                        {isUploading ? "Téléversement..." : "Téléverser"}
+                      </button>
+                      <button
+                        className="btn-remove"
+                        onClick={handleRemoveFile}
+                        disabled={isUploading}
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="saisie-content">
             {userSites.length === 0 ? (
               <div className="empty-state">
@@ -271,6 +397,7 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
                         site={site}
                         validators={validators}
                         onSaisieClick={handleSaisieClick}
+                        onExcelDownload={handleExcelDownload}
                         userRole={user.role}
                       />
                     );

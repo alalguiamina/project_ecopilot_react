@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, Shield, CheckCircle, Database } from "lucide-react";
+import { Users, Shield, CheckCircle, Database, Download } from "lucide-react";
 import { useGetUsersBySite } from "../../hooks/useGetUsersBySite";
 import type { Site } from "../../types/site";
 
@@ -15,6 +15,7 @@ interface SiteCardProps {
   site: Site;
   validators?: ValidatorInfo[];
   onSaisieClick: (siteId: number) => void;
+  onExcelDownload?: (siteId: number) => void;
   userRole: string;
 }
 
@@ -22,6 +23,7 @@ const SiteCard: React.FC<SiteCardProps> = ({
   site,
   validators: adminValidators,
   onSaisieClick,
+  onExcelDownload,
   userRole,
 }) => {
   // For agents, don't fetch users to avoid permission issues
@@ -124,6 +126,14 @@ const SiteCard: React.FC<SiteCardProps> = ({
       </div>
 
       <div className="site-actions">
+        <button
+          className="btn-excel"
+          onClick={() => onExcelDownload?.(site.id)}
+          title="Télécharger le modèle Excel"
+        >
+          <Download size={16} />
+          Excel
+        </button>
         <button
           className="btn-saisie"
           onClick={() => onSaisieClick(site.id)}

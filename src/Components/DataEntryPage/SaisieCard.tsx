@@ -7,6 +7,8 @@ import {
   User,
   AlertCircle,
   CheckCircle,
+  LocationEdit,
+  Users,
 } from "lucide-react";
 import { useValidateSaisie } from "../../hooks/useValidateSaisie";
 import type { Site } from "../../types/site";
@@ -200,12 +202,16 @@ const SaisieCard: React.FC<SaisieCardProps> = ({
             <div className="site-location-container">
               {site.location && site.location !== "Emplacement non spécifié" ? (
                 <div className="site-location-badge">
-                  <span className="location-icon">📍</span>
+                  <span className="location-icon">
+                    <LocationEdit size={16} />
+                  </span>
                   <span>{site.location}</span>
                 </div>
               ) : (
                 <div className="site-location-badge no-location">
-                  <span className="location-icon">📋</span>
+                  <span className="location-icon">
+                    <LocationEdit size={16} />
+                  </span>
                   <span>Emplacement à définir</span>
                 </div>
               )}
@@ -276,7 +282,9 @@ const SaisieCard: React.FC<SaisieCardProps> = ({
 
           <div className="detail-dates">
             <div className="date-item">
-              <span className="date-label">📅 Création</span>
+              <span className="date-label">
+                <Calendar size={16} /> Création
+              </span>
               <span className="date-value">
                 {new Date(saisie.date_creation).toLocaleDateString("fr-FR", {
                   day: "2-digit",
@@ -322,7 +330,10 @@ const SaisieCard: React.FC<SaisieCardProps> = ({
 
         {validators.length > 0 && (
           <div className="validators-section">
-            <h4 className="validators-title">👥 Validateurs assignés</h4>
+            <h4 className="validators-title">
+              <Users size={16} />
+              Validateurs assignés
+            </h4>
             <div className="validators-list">
               {validators.slice(0, 3).map((validator) => (
                 <div key={validator.id} className="validator-item">

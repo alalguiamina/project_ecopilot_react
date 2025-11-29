@@ -12,11 +12,7 @@ services:
     environment:
       - NODE_ENV=production
     restart: unless-stopped
-    volumes:
-      # Optional: Mount SSL certificates if you plan to use HTTPS
-      # - ./ssl:/etc/nginx/ssl:ro
-      # Optional: Mount custom nginx config
-      # - ./nginx.conf:/etc/nginx/nginx.conf:ro
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ecopilot-frontend.rule=Host(`your-domain.com`)"

@@ -764,18 +764,6 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
             {existingSaisie ? "Fermer" : "Annuler"}
           </button>
           <button
-            className="btn-draft"
-            onClick={() => handleSave(true)}
-            disabled={
-              createSaisieMutation.isPending ||
-              updateSaisieMutation.isPending ||
-              !site.config_json
-            }
-          >
-            <FileText size={16} />
-            Brouillon
-          </button>
-          <button
             className="btn-save"
             onClick={() => handleSave(false)}
             disabled={

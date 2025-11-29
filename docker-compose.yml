@@ -7,8 +7,8 @@ services:
       dockerfile: Dockerfile
     container_name: ecopilot-frontend
     ports:
-      - "80:80"
-      - "443:443"
+      - "3000:80"
+      - "3443:443"
     environment:
       - NODE_ENV=production
     restart: unless-stopped

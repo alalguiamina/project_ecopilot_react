@@ -17,6 +17,7 @@ interface SiteCardProps {
   onSaisieClick: (siteId: number) => void;
   onExcelDownload?: (siteId: number) => void;
   userRole: string;
+  isDownloading?: boolean;
 }
 
 const SiteCard: React.FC<SiteCardProps> = ({
@@ -25,6 +26,7 @@ const SiteCard: React.FC<SiteCardProps> = ({
   onSaisieClick,
   onExcelDownload,
   userRole,
+  isDownloading = false,
 }) => {
   // For agents, don't fetch users to avoid permission issues
   // Show simplified view without validator details
@@ -130,17 +132,19 @@ const SiteCard: React.FC<SiteCardProps> = ({
           className="btn-excel"
           onClick={() => onExcelDownload?.(site.id)}
           title="Télécharger le modèle Excel"
+          disabled={isDownloading}
         >
           <Download size={16} />
-          Excel
+          {isDownloading ? "Téléchargement..." : "Excel"}
         </button>
         <button
           className="btn-saisie"
           onClick={() => onSaisieClick(site.id)}
           disabled={
-            userRole === "admin" &&
-            validators.length === 0 &&
-            site.require_double_validation
+            isDownloading ||
+            (userRole === "admin" &&
+              validators.length === 0 &&
+              site.require_double_validation)
           }
         >
           <Database size={16} />

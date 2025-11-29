@@ -17,6 +17,7 @@ export { useCreateSaisie } from "./useCreateSaisie";
 export { useGetSaisies } from "./useGetSaisies";
 export { useUpdateSaisie } from "./useUpdateSaisie";
 export { useUploadCsvSaisie } from "./useUploadCsvSaisie";
+export { useDownloadCsvTemplate } from "./useDownloadCsvTemplate";
 
 // Other hooks
 export { usePageTitle } from "./usePageTitle";
@@ -67,3 +68,6 @@ export type {
   CsvUploadResponse,
   CsvUploadRequest,
 } from "../types/saisie";
+
+// Export CSV download types
+export type { CsvDownloadRequest } from "./useDownloadCsvTemplate";

@@ -1,10 +1,21 @@
 import React, { useMemo, useState } from "react";
-import { Database, Building2 } from "lucide-react";
+import {
+  Database,
+  Building2,
+  Download,
+  Upload,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+} from "lucide-react";
 import { User } from "../../App";
 import { useGetSites } from "../../hooks/useGetSites";
 import { useGetUsers } from "../../hooks/useGetUsers";
+import { useUploadCsvSaisie } from "../../hooks/useUploadCsvSaisie";
+import { useDownloadCsvTemplate } from "../../hooks/useDownloadCsvTemplate";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Site } from "../../types/site";
+import type { CsvUploadResponse } from "../../types/saisie";
 import Sidebar from "../Sidebar/Sidebar";
 import Topbar from "../Topbar/Topbar";
 import SiteCard from "./SiteCard";
@@ -27,8 +38,18 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [selectedSiteForUpload, setSelectedSiteForUpload] = useState<
+    number | null
+  >(null);
+  const [uploadResult, setUploadResult] = useState<CsvUploadResponse | null>(
+    null,
+  );
   const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
+
+  // CSV upload and download hooks
+  const csvUploadMutation = useUploadCsvSaisie();
+  const csvDownloadMutation = useDownloadCsvTemplate();
 
   // Logout handler
   const handleLogout = () => {
@@ -181,32 +202,82 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validate file type
+      const allowedExtensions = [".csv", ".xls", ".xlsx"];
+      const fileExtension = file.name
+        .toLowerCase()
+        .substring(file.name.lastIndexOf("."));
+
+      if (!allowedExtensions.includes(fileExtension)) {
+        alert(
+          "Type de fichier non supporté. Veuillez utiliser un fichier CSV, XLS ou XLSX.",
+        );
+        return;
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert(
+          "Le fichier est trop volumineux. Taille maximale autorisée : 10MB.",
+        );
+        return;
+      }
+
       setUploadedFile(file);
+      setUploadResult(null); // Clear previous upload results
     }
   };
 
+  const handleSiteSelectForUpload = (siteId: number) => {
+    setSelectedSiteForUpload(siteId);
+  };
+
   const handleFileUpload = async () => {
-    if (!uploadedFile) return;
+    if (!uploadedFile || !selectedSiteForUpload) {
+      alert("Veuillez sélectionner un fichier et un site.");
+      return;
+    }
 
     setIsUploading(true);
+    setUploadResult(null);
+
     try {
-      // TODO: Implement file upload logic here
-      console.log("Uploading file:", uploadedFile.name);
+      console.log("Starting CSV upload:", {
+        siteId: selectedSiteForUpload,
+        fileName: uploadedFile.name,
+        fileSize: uploadedFile.size,
+        fileType: uploadedFile.type,
+      });
 
-      // Simulate upload delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const result = await csvUploadMutation.mutateAsync({
+        siteId: selectedSiteForUpload,
+        file: uploadedFile,
+      });
 
-      alert(`Fichier "${uploadedFile.name}" téléversé avec succès!`);
+      setUploadResult(result);
       setUploadedFile(null);
+      setSelectedSiteForUpload(null);
 
       // Reset file input
       const fileInput = document.getElementById(
         "file-upload",
       ) as HTMLInputElement;
       if (fileInput) fileInput.value = "";
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      alert("Erreur lors du téléversement du fichier.");
+
+      console.log("Upload successful:", result);
+    } catch (error: any) {
+      console.error("Upload failed:", error);
+      console.error("Error details:", {
+        message: error.message,
+        cause: error.cause,
+        stack: error.stack,
+      });
+
+      // Show more detailed error message
+      const errorMessage =
+        error.message || "Erreur inconnue lors du téléversement";
+      alert(`Erreur lors du téléversement: ${errorMessage}`);
     } finally {
       setIsUploading(false);
     }
@@ -220,21 +291,25 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
     if (fileInput) fileInput.value = "";
   };
 
-  const handleExcelDownload = (siteId: number) => {
-    // TODO: Implement Excel template download logic
-    console.log("Downloading Excel template for site:", siteId);
-
-    // Simulate download
+  const handleExcelDownload = async (siteId: number) => {
     const site = userSites.find((s) => s.id === siteId);
-    if (site) {
-      alert(
-        `Téléchargement du modèle Excel pour le site "${site.name}" en cours...`,
-      );
+    if (!site) {
+      alert("Site non trouvé.");
+      return;
+    }
 
-      // Here you would typically:
-      // 1. Call an API endpoint to generate the Excel template
-      // 2. Download the file
-      // Example: window.open(`/api/sites/${siteId}/excel-template`, '_blank');
+    try {
+      console.log("Downloading CSV template for site:", siteId);
+
+      await csvDownloadMutation.mutateAsync({
+        siteId,
+        filename: `template_saisie_${site.name.replace(/[^a-zA-Z0-9]/g, "_")}_${siteId}.xlsx`,
+      });
+
+      // Success message handled by the hook
+    } catch (error: any) {
+      console.error("Download failed:", error);
+      alert(`Erreur lors du téléchargement: ${error.message}`);
     }
   };
 
@@ -309,8 +384,50 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
           <div className="file-upload-section">
             <div className="upload-container">
               <div className="upload-header">
-                <h3 className="upload-title">Téléverser un fichier</h3>
+                <h3 className="upload-title">
+                  <Upload size={20} style={{ marginRight: "8px" }} />
+                  Téléverser un fichier CSV
+                </h3>
+                <p style={{ fontSize: "14px", color: "#666", margin: "5px 0" }}>
+                  Téléversez vos données de saisie via un fichier CSV, XLS ou
+                  XLSX
+                </p>
               </div>
+
+              {/* Site Selection for Upload */}
+              {!uploadedFile && userSites.length > 0 && (
+                <div style={{ marginBottom: "20px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "5px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Sélectionnez un site:
+                  </label>
+                  <select
+                    value={selectedSiteForUpload || ""}
+                    onChange={(e) =>
+                      handleSiteSelectForUpload(Number(e.target.value))
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      border: "1px solid #ddd",
+                      borderRadius: "5px",
+                      fontSize: "14px",
+                    }}
+                  >
+                    <option value="">-- Choisir un site --</option>
+                    {userSites.map((site) => (
+                      <option key={site.id} value={site.id}>
+                        {site.name} ({site.location})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="upload-area">
                 {!uploadedFile ? (
@@ -320,17 +437,23 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
                       id="file-upload"
                       className="file-input"
                       onChange={handleFileSelect}
-                      accept=".xlsx,.xls,.csv,"
+                      accept=".xlsx,.xls,.csv"
+                      disabled={!selectedSiteForUpload}
                     />
-                    <label htmlFor="file-upload" className="upload-label">
+                    <label
+                      htmlFor="file-upload"
+                      className={`upload-label ${!selectedSiteForUpload ? "disabled" : ""}`}
+                    >
                       <div className="upload-icon">
                         <Database size={32} />
                       </div>
                       <span className="upload-text">
-                        Cliquez pour sélectionner un fichier
+                        {selectedSiteForUpload
+                          ? "Cliquez pour sélectionner un fichier"
+                          : "Sélectionnez d'abord un site"}
                       </span>
                       <span className="upload-formats">
-                        Formats acceptés: CSV
+                        Formats acceptés: CSV, XLS, XLSX (max 10MB)
                       </span>
                     </label>
                   </div>
@@ -345,13 +468,23 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
                         <span className="file-size">
                           {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
                         </span>
+                        {selectedSiteForUpload && (
+                          <span style={{ fontSize: "12px", color: "#666" }}>
+                            Site:{" "}
+                            {
+                              userSites.find(
+                                (s) => s.id === selectedSiteForUpload,
+                              )?.name
+                            }
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="file-actions">
                       <button
                         className="btn-upload"
                         onClick={handleFileUpload}
-                        disabled={isUploading}
+                        disabled={isUploading || !selectedSiteForUpload}
                       >
                         {isUploading ? "Téléversement..." : "Téléverser"}
                       </button>
@@ -366,6 +499,112 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
                   </div>
                 )}
               </div>
+
+              {/* Upload Results */}
+              {uploadResult && (
+                <div style={{ marginTop: "20px" }}>
+                  <div
+                    style={{
+                      padding: "15px",
+                      borderRadius: "5px",
+                      backgroundColor: uploadResult.errors?.length
+                        ? "#fee"
+                        : "#efe",
+                      border: `1px solid ${uploadResult.errors?.length ? "#fcc" : "#cfc"}`,
+                    }}
+                  >
+                    <h4
+                      style={{
+                        margin: "0 0 10px 0",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        color: uploadResult.errors?.length ? "#c33" : "#3a3",
+                      }}
+                    >
+                      {uploadResult.errors?.length ? (
+                        <>
+                          <AlertCircle size={20} /> Téléversement avec erreurs
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle size={20} /> Téléversement réussi
+                        </>
+                      )}
+                    </h4>
+
+                    <p style={{ margin: "5px 0", fontSize: "14px" }}>
+                      {uploadResult.message}
+                    </p>
+
+                    {(uploadResult.created_saisies ||
+                      uploadResult.updated_saisies) && (
+                      <div style={{ fontSize: "14px", marginTop: "10px" }}>
+                        {uploadResult.created_saisies && (
+                          <p style={{ margin: "2px 0", color: "#3a3" }}>
+                            ✓ {uploadResult.created_saisies} nouvelle(s)
+                            saisie(s) créée(s)
+                          </p>
+                        )}
+                        {uploadResult.updated_saisies && (
+                          <p style={{ margin: "2px 0", color: "#3a3" }}>
+                            ✓ {uploadResult.updated_saisies} saisie(s) mise(s) à
+                            jour
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {uploadResult.warnings?.length ? (
+                      <div style={{ marginTop: "10px" }}>
+                        <h5 style={{ margin: "5px 0", color: "#f90" }}>
+                          ⚠️ Avertissements ({uploadResult.warnings.length}):
+                        </h5>
+                        <div
+                          style={{
+                            maxHeight: "100px",
+                            overflowY: "auto",
+                            fontSize: "12px",
+                          }}
+                        >
+                          {uploadResult.warnings.map((warning, index) => (
+                            <p
+                              key={index}
+                              style={{ margin: "2px 0", color: "#f90" }}
+                            >
+                              Ligne {warning.row}: {warning.message}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {uploadResult.errors?.length ? (
+                      <div style={{ marginTop: "10px" }}>
+                        <h5 style={{ margin: "5px 0", color: "#c33" }}>
+                          ❌ Erreurs ({uploadResult.errors.length}):
+                        </h5>
+                        <div
+                          style={{
+                            maxHeight: "100px",
+                            overflowY: "auto",
+                            fontSize: "12px",
+                          }}
+                        >
+                          {uploadResult.errors.map((error, index) => (
+                            <p
+                              key={index}
+                              style={{ margin: "2px 0", color: "#c33" }}
+                            >
+                              Ligne {error.row}: {error.message}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -399,6 +638,7 @@ export const SaisiePage = ({ user }: SaisiePageProps) => {
                         onSaisieClick={handleSaisieClick}
                         onExcelDownload={handleExcelDownload}
                         userRole={user.role}
+                        isDownloading={csvDownloadMutation.isPending}
                       />
                     );
                   })}

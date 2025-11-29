@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import type { User } from "../../App";
+import type { User as BackendUser } from "../../types/user";
 
 type ProtectedRouteProps = {
-  user: User | null;
+  user: BackendUser | null;
   requiredRole?: string | string[];
   children: React.ReactElement;
 };

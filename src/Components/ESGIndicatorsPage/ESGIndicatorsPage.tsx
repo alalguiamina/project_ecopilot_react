@@ -1,7 +1,7 @@
 import React, { useState, ReactNode } from "react";
 import "./ESGIndicatorsPage.css";
 import Sidebar from "../Sidebar/Sidebar";
-import { User } from "App";
+import type { User as BackendUser } from "../../types/user";
 
 type EnergyDatum = {
   mois: string;
@@ -53,7 +53,7 @@ const getNumericValue = (datum: ChartDatum, key: string) => {
 // Accept a tolerant user prop to avoid strict cross-module User type mismatch.
 // Sidebar itself expects a minimal SidebarUser; passing `any` here avoids TS conflicts
 // while keeping runtime behavior unchanged.
-function ESGIndicatorsPage({ user }: { user?: any }) {
+function ESGIndicatorsPage({ user }: { user?: BackendUser }) {
   const [expandedSection, setExpandedSection] = useState<SectionKey | null>(
     null,
   );

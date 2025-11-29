@@ -12,10 +12,10 @@ import canevasIcon from "../../Assets/canevas.png";
 import validationIcon from "../../Assets/validation.png";
 import organisationIcon from "../../Assets/organisation.png";
 import logo from "../../Assets/logo.png";
-import type { User } from "../../App";
+import type { User as BackendUser } from "../../types/user";
 
 interface SidebarProps {
-  user?: User | null;
+  user?: BackendUser | null;
 }
 
 type MenuItem = {
@@ -66,34 +66,34 @@ const Sidebar = ({ user }: SidebarProps) => {
         },
       ],
     },
-    {
-      id: "carbon",
-      label: "Bilan Carbone",
-      icon: leafIcon,
-      color: "#059669",
-      path: "/carbon",
-    },
-    {
-      id: "esg",
-      label: "Indicateurs ESG",
-      icon: chartIcon,
-      color: "#f97316",
-      path: "/esg",
-    },
-    {
-      id: "alignment",
-      label: "Alignement RSE",
-      icon: targetIcon,
-      color: "#8b5cf6",
-      path: "/alignment",
-    },
-    {
-      id: "reports",
-      label: "Rapports RSE",
-      icon: reportIcon,
-      color: "#b45309",
-      path: "/reports",
-    },
+    // {
+    //   id: "carbon",
+    //   label: "Bilan Carbone",
+    //   icon: leafIcon,
+    //   color: "#059669",
+    //   path: "/carbon",
+    // },
+    // {
+    //   id: "esg",
+    //   label: "Indicateurs ESG",
+    //   icon: chartIcon,
+    //   color: "#f97316",
+    //   path: "/esg",
+    // },
+    // {
+    //   id: "alignment",
+    //   label: "Alignement RSE",
+    //   icon: targetIcon,
+    //   color: "#8b5cf6",
+    //   path: "/alignment",
+    // },
+    // {
+    //   id: "reports",
+    //   label: "Rapports RSE",
+    //   icon: reportIcon,
+    //   color: "#b45309",
+    //   path: "/reports",
+    // },
     {
       id: "organisation",
       label: "Organisation",
@@ -102,13 +102,13 @@ const Sidebar = ({ user }: SidebarProps) => {
       path: "/organisation",
       adminOnly: true,
     },
-    {
-      id: "settings",
-      label: "Paramètres",
-      icon: settingsIcon,
-      color: "#64748b",
-      path: "/settings",
-    },
+    // {
+    //   id: "settings",
+    //   label: "Paramètres",
+    //   icon: settingsIcon,
+    //   color: "#64748b",
+    //   path: "/settings",
+    // },
   ];
 
   // normalize user role for checks

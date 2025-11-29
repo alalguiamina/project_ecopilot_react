@@ -277,17 +277,10 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
             </div>
           ) : (
             <>
-              {/* Sites and Users Selection */}
+              {/* Sites Selection */}
               <div className="sites-section">
-                <h3>Sélectionner un site et un utilisateur</h3>
-                <div
-                  className="selection-wrapper"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "16px",
-                  }}
-                >
+                <h3>Sélectionner un site</h3>
+                <div className="selection-wrapper">
                   <div className="site-select-wrapper">
                     <label
                       style={{
@@ -309,27 +302,6 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
                         handleSiteSelect(siteId);
                       }}
                       inputId="config-site-select"
-                      isClearable={true}
-                    />
-                  </div>
-
-                  <div className="user-select-wrapper">
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "8px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Utilisateur
-                    </label>
-                    <UserComboBox
-                      value={selectedUsers}
-                      onChange={(userIds) =>
-                        setSelectedUsers(userIds as number[])
-                      }
-                      placeholder="Choisir des utilisateurs..."
-                      inputId="config-user-select"
                       isClearable={true}
                     />
                   </div>

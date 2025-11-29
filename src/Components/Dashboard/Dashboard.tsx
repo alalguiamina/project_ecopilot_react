@@ -20,7 +20,7 @@ import {
 
 import KpiCard from "../KpiCard/KpiCard";
 import Sidebar from "Components/Sidebar/Sidebar";
-import { User } from "App";
+import type { User as BackendUser } from "../../types/user";
 import Topbar from "Components/Topbar/Topbar";
 import { usePageTitle } from "hooks/usePageTitle";
 import award from "../../Assets/award.png";
@@ -28,7 +28,7 @@ import leaf from "../../Assets/leaf.png";
 import chart1 from "../../Assets/chart1.png";
 import users from "../../Assets/users.png";
 
-type DashboardProps = { user: User };
+type DashboardProps = { user: BackendUser };
 
 type PieDatum = {
   name: string;
@@ -118,7 +118,7 @@ const Dashboard = ({ user }: DashboardProps) => {
   const pageTitle = usePageTitle();
   const topbarProps = {
     title: pageTitle,
-    userName: "Amina", // user.name
+    userName: user.username, // user.name
     onLogout: handleLogout,
   };
 

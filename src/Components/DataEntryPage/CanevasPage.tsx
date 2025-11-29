@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import "./CanevasPage.css";
 import Sidebar from "../Sidebar/Sidebar";
-import { User } from "../../App";
+import type { User as BackendUser } from "../../types/user";
 import { useNavigate } from "react-router-dom";
 import { usePageTitle } from "hooks/usePageTitle";
 import Topbar from "Components/Topbar/Topbar";
@@ -30,7 +30,7 @@ interface ValidatorInfo {
   role: string;
 }
 
-export const CanevasPage = ({ user }: { user: User }) => {
+export const CanevasPage = ({ user }: { user: BackendUser }) => {
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "en-cours" | "validees" | "rejetees"

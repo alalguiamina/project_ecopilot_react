@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./CarbonFootprintPage.css";
 import Sidebar from "../Sidebar/Sidebar";
-import { User } from "App";
+import type { User as BackendUser } from "../../types/user";
 
 type ActiveTab = "scope1" | "scope2" | "scope3";
 
@@ -22,7 +22,7 @@ type ScopeDetail = {
   emissions: number;
 };
 
-function CarbonFootprintPage({ user }: { user: User }) {
+function CarbonFootprintPage({ user }: { user: BackendUser }) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("scope1");
 
   const scopeData: ScopeDatum[] = [

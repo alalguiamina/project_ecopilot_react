@@ -8,7 +8,7 @@ import {
   AlertCircle,
   XCircle,
 } from "lucide-react";
-import { User } from "../../App";
+import type { User as BackendUser } from "../../types/user";
 import { useGetSites } from "../../hooks/useGetSites";
 import { useGetUsers } from "../../hooks/useGetUsers";
 import { useUploadCsvSaisie } from "../../hooks/useUploadCsvSaisie";
@@ -23,7 +23,7 @@ import DataEntryDialog from "./DataEntryDialog";
 import "./SaisiePage.css";
 
 interface SaisiePageProps {
-  user: User;
+  user: BackendUser;
 }
 
 interface ValidatorInfo {

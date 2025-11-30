@@ -1,27 +1,23 @@
 {
   "files": {
-    "main.css": "/project_ecopilot_react/static/css/main.ef6dd46d.css",
-    "main.js": "/project_ecopilot_react/static/js/main.98c5caa5.js",
-    "static/media/backgroundlogin.jpg": "/project_ecopilot_react/static/media/backgroundlogin.502484a82129d2a8a31d.jpg",
-    "static/media/target.png": "/project_ecopilot_react/static/media/target.1f12d23db7d13f6d30e5.png",
-    "static/media/award.png": "/project_ecopilot_react/static/media/award.153aeab1f5fe56f65fc3.png",
-    "static/media/settings.png": "/project_ecopilot_react/static/media/settings.6f420233a3be1c8394cb.png",
-    "static/media/leaf.png": "/project_ecopilot_react/static/media/leaf.6c80ebdbd1c787c18c43.png",
-    "static/media/validation.png": "/project_ecopilot_react/static/media/validation.3f93d01af35c1a6cfb6f.png",
-    "static/media/organisation.png": "/project_ecopilot_react/static/media/organisation.9c03622b4c4efa6503a3.png",
-    "static/media/canevas.png": "/project_ecopilot_react/static/media/canevas.3ed6c71c39aad9430d0e.png",
-    "static/media/users.png": "/project_ecopilot_react/static/media/users.cc0332dbd05f7fd4ff21.png",
-    "static/media/report.png": "/project_ecopilot_react/static/media/report.cb98048d59256fe68c65.png",
-    "static/media/password.png": "/project_ecopilot_react/static/media/password.afd8da6a2989f5778ae4.png",
-    "static/media/chart1.png": "/project_ecopilot_react/static/media/chart1.1a6704c9a92b582a98ec.png",
-    "static/media/pen.png": "/project_ecopilot_react/static/media/pen.d226aa18c78b2fe5ab2d.png",
-    "static/media/chart.png": "/project_ecopilot_react/static/media/chart.781ef5a0b21cf67a87a7.png",
-    "index.html": "/project_ecopilot_react/index.html",
-    "main.ef6dd46d.css.map": "/project_ecopilot_react/static/css/main.ef6dd46d.css.map",
-    "main.98c5caa5.js.map": "/project_ecopilot_react/static/js/main.98c5caa5.js.map"
+    "main.css": "/static/css/main.ef6dd46d.css",
+    "main.js": "/static/js/main.a707302f.js",
+    "static/media/backgroundlogin.jpg": "/static/media/backgroundlogin.502484a82129d2a8a31d.jpg",
+    "static/media/award.png": "/static/media/award.153aeab1f5fe56f65fc3.png",
+    "static/media/leaf.png": "/static/media/leaf.6c80ebdbd1c787c18c43.png",
+    "static/media/validation.png": "/static/media/validation.3f93d01af35c1a6cfb6f.png",
+    "static/media/organisation.png": "/static/media/organisation.9c03622b4c4efa6503a3.png",
+    "static/media/canevas.png": "/static/media/canevas.3ed6c71c39aad9430d0e.png",
+    "static/media/users.png": "/static/media/users.cc0332dbd05f7fd4ff21.png",
+    "static/media/password.png": "/static/media/password.afd8da6a2989f5778ae4.png",
+    "static/media/chart1.png": "/static/media/chart1.1a6704c9a92b582a98ec.png",
+    "static/media/pen.png": "/static/media/pen.d226aa18c78b2fe5ab2d.png",
+    "index.html": "/index.html",
+    "main.ef6dd46d.css.map": "/static/css/main.ef6dd46d.css.map",
+    "main.a707302f.js.map": "/static/js/main.a707302f.js.map"
   },
   "entrypoints": [
     "static/css/main.ef6dd46d.css",
-    "static/js/main.98c5caa5.js"
+    "static/js/main.a707302f.js"
   ]
 }

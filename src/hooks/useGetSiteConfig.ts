@@ -14,7 +14,7 @@ export const useGetSiteConfig = (siteId: number | null) => {
     queryFn: async (): Promise<SiteConfigResponse> => {
       if (!siteId) throw new Error("Site ID is required");
 
-      const resp = await fetchClient<any>(`/user/sites/${siteId}/`);
+      const resp = await fetchClient<any>(`/iam/sites/${siteId}/`);
       if (resp.error || !resp.data) {
         throw (
           resp.error ||

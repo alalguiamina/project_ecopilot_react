@@ -25,12 +25,12 @@ export const useGetPosteIndicateurs = (
         `[useGetPosteIndicateurs] Fetching indicateurs for poste ID: ${posteId}`,
       );
       console.log(
-        `[useGetPosteIndicateurs] API endpoint: /user/postes-emission/${posteId}/indicateurs/`,
+        `[useGetPosteIndicateurs] API endpoint: /iam/postes-emission/${posteId}/indicateurs/`,
       );
 
       try {
         const response = await fetchClient<PosteIndicateur[]>(
-          `/user/postes-emission/${posteId}/indicateurs/`,
+          `/iam/postes-emission/${posteId}/indicateurs/`,
         );
 
         console.log(`[useGetPosteIndicateurs] Raw response:`, response);

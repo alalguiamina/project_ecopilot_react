@@ -6,7 +6,7 @@ export const useGetSites = () =>
   useQuery({
     queryKey: ["sites"],
     queryFn: async (): Promise<Site[]> => {
-      const resp = await fetchClient<Site[]>("/user/sites/");
+      const resp = await fetchClient<Site[]>("/iam/sites/");
       if (resp.error || !resp.data)
         throw resp.error || new Error("Failed to fetch sites");
       return resp.data;

@@ -20,7 +20,7 @@ export const useGetTypeIndicateurs = (
       console.log("[useGetTypeIndicateurs] Fetching type indicateurs...");
 
       const response = await fetchClient<TypeIndicateur[]>(
-        "/user/type-indicateurs/",
+        "/iam/type-indicateurs/",
       );
 
       if (response.error) {

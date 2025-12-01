@@ -18,7 +18,7 @@ export const useGetUsers = (options: UseGetUsersOptions = {}) => {
   return useQuery({
     queryKey: ["users"],
     queryFn: async (): Promise<User[]> => {
-      const response = await fetchClient<User[]>("/user/users/");
+      const response = await fetchClient<User[]>("/iam/users/");
 
       if (response.error || !response.data) {
         throw response.error || new Error("Failed to fetch users");

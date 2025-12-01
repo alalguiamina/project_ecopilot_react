@@ -22,10 +22,10 @@ export const useCreateSite = () => {
         config_json: (siteData as any).config_json ?? {},
       };
 
-      console.log("[useCreateSite] POST /user/sites/ body:", body);
+      console.log("[useCreateSite] POST /iam/sites/ body:", body);
 
       // Use fetchClient POST (no manual headers here — fetchClient will attach auth)
-      const response = await fetchClient<Site>("/user/sites/", {
+      const response = await fetchClient<Site>("/iam/sites/", {
         method: "POST",
         body,
       });

@@ -15,13 +15,10 @@ export const useUpdateSiteConfig = () => {
       siteId,
       config,
     }: UpdateSiteConfigParams): Promise<void> => {
-      const response = await fetchClient<void>(
-        `/user/sites/${siteId}/config/`,
-        {
-          method: "PUT",
-          body: config,
-        },
-      );
+      const response = await fetchClient<void>(`/iam/sites/${siteId}/config/`, {
+        method: "PUT",
+        body: config,
+      });
 
       if (response.error) {
         throw response.error || new Error("Failed to update site config");

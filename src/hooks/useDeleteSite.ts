@@ -24,9 +24,9 @@ export const useDeleteSite = () => {
         throw new Error("Authentication failed. Please log in again.");
       }
 
-      console.log("🌐 Making DELETE request to user/sites/" + siteId + "/");
+      console.log("🌐 Making DELETE request to /iam/sites/" + siteId + "/");
 
-      const resp = await fetchClient<void>(`/user/sites/${siteId}/`, {
+      const resp = await fetchClient<void>(`/iam/sites/${siteId}/`, {
         method: "DELETE",
       });
 

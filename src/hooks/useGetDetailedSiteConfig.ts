@@ -30,7 +30,7 @@ export const useGetDetailedSiteConfig = (siteId: number | null) => {
       const configResp = await fetchClient<{
         configs: SiteIndicateurConfigItem[];
         site: any;
-      }>(`/user/sites/${siteId}/config/`);
+      }>(`/iam/sites/${siteId}/config/`);
 
       if (configResp.error || !configResp.data) {
         throw (

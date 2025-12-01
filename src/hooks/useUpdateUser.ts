@@ -15,7 +15,7 @@ export const useUpdateUser = () => {
       userId,
       userData,
     }: UpdateUserParams): Promise<User> => {
-      const response = await fetchClient<User>(`/user/users/${userId}/`, {
+      const response = await fetchClient<User>(`/iam/users/${userId}/`, {
         method: "PUT",
         body: userData,
       });

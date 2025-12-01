@@ -10,7 +10,7 @@ export const useGetUser = (userId: number | null) => {
         throw new Error("User ID is required");
       }
 
-      const response = await fetchClient<User>(`/user/users/${userId}/`);
+      const response = await fetchClient<User>(`/iam/users/${userId}/`);
 
       if (response.error || !response.data) {
         throw response.error || new Error("Failed to fetch user");

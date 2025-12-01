@@ -19,7 +19,7 @@ export const useGetPosteEmission = ({
       );
 
       const response = await fetchClient<PosteEmission>(
-        `/user/postes-emission/${id}/`,
+        `/iam/postes-emission/${id}/`,
       );
 
       if (response.error) {

@@ -19,7 +19,7 @@ export const useUpdateSite = () => {
       id: number;
       data: UpdateSiteRequest;
     }): Promise<Site> => {
-      const resp = await fetchClient<Site>(`/user/sites/${id}/`, {
+      const resp = await fetchClient<Site>(`/iam/sites/${id}/`, {
         method: "PATCH",
         body: data,
       });

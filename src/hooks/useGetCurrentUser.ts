@@ -4,7 +4,7 @@ import type { User as BackendUser } from "../types/user";
 import { error } from "console";
 
 const PROFILE_ENDPOINT =
-  process.env.REACT_APP_PROFILE_ENDPOINT || "/user/users/me/"; // adjust if your backend uses another path
+  process.env.REACT_APP_PROFILE_ENDPOINT || "/iam/users/me/"; // adjust if your backend uses another path
 
 export const useGetCurrentUser = (opts?: { enabled?: boolean }) =>
   useQuery({

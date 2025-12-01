@@ -84,7 +84,7 @@ export const testAuthenticatedCall = async () => {
   console.log("=== TESTING API CALL ===");
 
   try {
-    const response = await fetchClient("user/users/", {
+    const response = await fetchClient("iam/users/", {
       method: "GET",
     });
 

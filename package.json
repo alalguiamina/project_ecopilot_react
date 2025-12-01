@@ -2,6 +2,7 @@
   "name": "login-signup",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://alalguiamina.github.io/Project_EcoPilot_React",
   "dependencies": {
     "@tanstack/react-query": "^5.90.10",
     "@tanstack/react-query-devtools": "^5.91.0",

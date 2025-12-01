@@ -25,10 +25,10 @@ export const useDeleteUser = () => {
       }
 
       try {
-        console.log("🌐 Making DELETE request to user/users/" + userId + "/");
+        console.log("🌐 Making DELETE request to /iam/users/" + userId + "/");
 
         // ✅ Make the actual API call
-        const response = await fetchClient(`/user/users/${userId}/`, {
+        const response = await fetchClient(`/iam/users/${userId}/`, {
           method: "DELETE",
         });
 

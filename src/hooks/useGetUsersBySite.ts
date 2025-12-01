@@ -8,7 +8,7 @@ export const useGetUsersBySite = (siteId: number | null) =>
     queryFn: async (): Promise<User[]> => {
       if (!siteId) return [];
 
-      const resp = await fetchClient<User[]>(`/user/users/?site_id=${siteId}`);
+      const resp = await fetchClient<User[]>(`/iam/users/?site_id=${siteId}`);
       if (resp.error || !resp.data) {
         throw resp.error || new Error("Failed to fetch users for site");
       }

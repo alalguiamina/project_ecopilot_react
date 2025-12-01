@@ -204,7 +204,11 @@ function App() {
   }
 
   return (
-    <Router basename={process.env.PUBLIC_URL}>
+    <Router
+      basename={
+        process.env.NODE_ENV === "production" ? "/Project_EcoPilot_React" : "/"
+      }
+    >
       <div className="App" style={{ display: "flex", minHeight: "100vh" }}>
         <div style={{ flex: 1 }}>
           <Routes>
@@ -261,7 +265,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
       </div>

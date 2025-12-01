@@ -7,7 +7,7 @@ export const useCreateUser = () => {
 
   return useMutation({
     mutationFn: async (userData: CreateUserRequest): Promise<User> => {
-      const response = await fetchClient<User>("/user/users/", {
+      const response = await fetchClient<User>("/iam/users/", {
         method: "POST",
         body: userData,
       });

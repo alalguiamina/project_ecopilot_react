@@ -13,7 +13,7 @@ export const useTestPosteIndicateurs = (posteId: number) => {
       // Try different endpoint variations
       const endpoints = [
         `/postes-user/emission/${posteId}/indicateurs/`,
-        `/user/postes-emission/${posteId}/indicateurs/`,
+        `/iam/postes-emission/${posteId}/indicateurs/`,
         `/postes-emission/${posteId}/indicateurs/`,
       ];
 

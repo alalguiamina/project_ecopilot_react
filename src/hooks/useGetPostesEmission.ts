@@ -20,7 +20,7 @@ export const useGetPostesEmission = (
       console.log("[useGetPostesEmission] Fetching postes emission...");
 
       const response = await fetchClient<PosteEmission[]>(
-        "/user/postes-emission/",
+        "/iam/postes-emission/",
       );
 
       if (response.error) {

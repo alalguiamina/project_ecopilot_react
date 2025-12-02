@@ -1,0 +1,20 @@
+{
+  "ServiceName": "ecopilot-frontend",
+  "SourceConfiguration": {
+    "ImageRepository": {
+      "ImageIdentifier": "676459154698.dkr.ecr.us-east-1.amazonaws.com/ecopilot-frontend:latest",
+      "ImageConfiguration": {
+        "Port": "80",
+        "RuntimeEnvironmentVariables": {
+          "NODE_ENV": "production"
+        }
+      },
+      "ImageRepositoryType": "ECR"
+    },
+    "AutoDeploymentsEnabled": false
+  },
+  "InstanceConfiguration": {
+    "Cpu": "0.25 vCPU",
+    "Memory": "0.5 GB"
+  }
+}

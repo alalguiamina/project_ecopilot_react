@@ -1,0 +1,16 @@
+version: 1.0
+runtime: docker
+build:
+  commands:
+    build:
+      - echo Build started on `date`
+      - docker build -t ecopilot-frontend .
+      - echo Build completed on `date`
+run:
+  runtime-version: latest
+  command: nginx -g 'daemon off;'
+  network:
+    port: 80
+  env:
+    - name: NODE_ENV
+      value: production

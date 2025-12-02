@@ -42,6 +42,7 @@ function App() {
 
   // on startup, force user to login (no auto-login)
   const { data: currentUser } = useGetCurrentUser({ enabled: false }); // Fetch current user data
+
   useEffect(() => {
     const initializeAuth = async () => {
       try {
@@ -204,12 +205,9 @@ function App() {
   }
 
   return (
-    <Router
-      basename={
-        process.env.NODE_ENV === "production" ? "/Project_EcoPilot_React" : "/"
-      }
-    >
+    <Router basename="/">
       <div className="App" style={{ display: "flex", minHeight: "100vh" }}>
+        <LocationAwareSidebar />
         <div style={{ flex: 1 }}>
           <Routes>
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
@@ -266,6 +264,7 @@ function App() {
               }
             />
             <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
       </div>

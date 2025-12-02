@@ -1,23 +1,23 @@
 {
   "files": {
-    "main.css": "/Project_EcoPilot_React/static/css/main.ef6dd46d.css",
-    "main.js": "/Project_EcoPilot_React/static/js/main.f644ffe4.js",
-    "static/media/backgroundlogin.jpg": "/Project_EcoPilot_React/static/media/backgroundlogin.502484a82129d2a8a31d.jpg",
-    "static/media/award.png": "/Project_EcoPilot_React/static/media/award.153aeab1f5fe56f65fc3.png",
-    "static/media/leaf.png": "/Project_EcoPilot_React/static/media/leaf.6c80ebdbd1c787c18c43.png",
-    "static/media/validation.png": "/Project_EcoPilot_React/static/media/validation.3f93d01af35c1a6cfb6f.png",
-    "static/media/organisation.png": "/Project_EcoPilot_React/static/media/organisation.9c03622b4c4efa6503a3.png",
-    "static/media/canevas.png": "/Project_EcoPilot_React/static/media/canevas.3ed6c71c39aad9430d0e.png",
-    "static/media/users.png": "/Project_EcoPilot_React/static/media/users.cc0332dbd05f7fd4ff21.png",
-    "static/media/password.png": "/Project_EcoPilot_React/static/media/password.afd8da6a2989f5778ae4.png",
-    "static/media/chart1.png": "/Project_EcoPilot_React/static/media/chart1.1a6704c9a92b582a98ec.png",
-    "static/media/pen.png": "/Project_EcoPilot_React/static/media/pen.d226aa18c78b2fe5ab2d.png",
-    "index.html": "/Project_EcoPilot_React/index.html",
-    "main.ef6dd46d.css.map": "/Project_EcoPilot_React/static/css/main.ef6dd46d.css.map",
-    "main.f644ffe4.js.map": "/Project_EcoPilot_React/static/js/main.f644ffe4.js.map"
+    "main.css": "/static/css/main.87991139.css",
+    "main.js": "/static/js/main.f2d5689b.js",
+    "static/media/backgroundlogin.jpg": "/static/media/backgroundlogin.502484a82129d2a8a31d.jpg",
+    "static/media/award.png": "/static/media/award.153aeab1f5fe56f65fc3.png",
+    "static/media/leaf.png": "/static/media/leaf.6c80ebdbd1c787c18c43.png",
+    "static/media/validation.png": "/static/media/validation.3f93d01af35c1a6cfb6f.png",
+    "static/media/organisation.png": "/static/media/organisation.9c03622b4c4efa6503a3.png",
+    "static/media/canevas.png": "/static/media/canevas.3ed6c71c39aad9430d0e.png",
+    "static/media/users.png": "/static/media/users.cc0332dbd05f7fd4ff21.png",
+    "static/media/password.png": "/static/media/password.afd8da6a2989f5778ae4.png",
+    "static/media/chart1.png": "/static/media/chart1.1a6704c9a92b582a98ec.png",
+    "static/media/pen.png": "/static/media/pen.d226aa18c78b2fe5ab2d.png",
+    "index.html": "/index.html",
+    "main.87991139.css.map": "/static/css/main.87991139.css.map",
+    "main.f2d5689b.js.map": "/static/js/main.f2d5689b.js.map"
   },
   "entrypoints": [
-    "static/css/main.ef6dd46d.css",
-    "static/js/main.f644ffe4.js"
+    "static/css/main.87991139.css",
+    "static/js/main.f2d5689b.js"
   ]
 }

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { X, Calendar, Save, FileText, Ban } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetPostesEmission } from "../../hooks/useGetPostesEmission";
@@ -61,6 +67,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
   const [indicatorData, setIndicatorData] = useState<IndicatorData>({});
   const [existingSaisie, setExistingSaisie] = useState<Saisie | null>(null);
   const [isManualDateChange, setIsManualDateChange] = useState(false);
+  const isInitialOpen = useRef(true);
 
   // Track dialog open/close state changes
   useEffect(() => {
@@ -71,14 +78,13 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
     });
 
     if (!isOpen) {
-      console.log("[DataEntryDialog] Dialog closed - clearing form data");
-      // Clear form data when dialog closes to prevent stale data on reopen
+      console.log("[DataEntryDialog] Dialog closed - clearing form data only");
+      // Clear form data when dialog closes but preserve month/year selection
       setIndicatorData({});
       setExistingSaisie(null);
       setIsManualDateChange(false);
-      // Reset to current month/year when closing
-      setSelectedMonth(new Date().getMonth() + 1);
-      setSelectedYear(new Date().getFullYear());
+      isInitialOpen.current = true; // Reset for next open
+      // Don't reset month/year - let user continue where they left off
     }
   }, [isOpen]);
 
@@ -125,8 +131,46 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
     siteId: currentSite?.id,
     mois: selectedMonth,
     annee: selectedYear,
-    enabled: Boolean(currentSite?.id && selectedMonth && selectedYear),
+    enabled: Boolean(
+      isOpen && currentSite?.id && selectedMonth && selectedYear,
+    ),
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
+
+  // Debug the query parameters
+  useEffect(() => {
+    console.log("[DataEntryDialog] useGetSaisies parameters:", {
+      isOpen,
+      currentSiteId: currentSite?.id,
+      selectedMonth,
+      selectedYear,
+      enabled: Boolean(
+        isOpen && currentSite?.id && selectedMonth && selectedYear,
+      ),
+      saisiesLoading,
+      existingSaisies: existingSaisies?.length,
+    });
+  }, [
+    isOpen,
+    currentSite?.id,
+    selectedMonth,
+    selectedYear,
+    saisiesLoading,
+    existingSaisies,
+  ]);
+
+  // Callback to handle refetching when needed
+  const handleRefetch = useCallback(() => {
+    if (currentSite?.id && selectedMonth && selectedYear) {
+      console.log("[DataEntryDialog] Triggering refetch for:", {
+        siteId: currentSite.id,
+        month: selectedMonth,
+        year: selectedYear,
+      });
+      refetchSaisies();
+    }
+  }, [refetchSaisies, currentSite?.id, selectedMonth, selectedYear]);
 
   // Create saisie mutation
   const createSaisieMutation = useCreateSaisie({
@@ -137,6 +181,11 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       // Invalidate all saisies queries to force fresh data fetch
       console.log("Invalidating saisies cache after create...");
       await queryClient.invalidateQueries({ queryKey: ["saisies"] });
+
+      // Also invalidate specific queries for this site/month/year
+      await queryClient.invalidateQueries({
+        queryKey: ["saisies", currentSite?.id, selectedMonth, selectedYear],
+      });
 
       // Manually refetch the saisies to get the updated data
       console.log("Refetching saisies after create...");
@@ -167,6 +216,11 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       // Invalidate all saisies queries to force fresh data fetch
       console.log("Invalidating saisies cache after update...");
       await queryClient.invalidateQueries({ queryKey: ["saisies"] });
+
+      // Also invalidate specific queries for this site/month/year
+      await queryClient.invalidateQueries({
+        queryKey: ["saisies", currentSite?.id, selectedMonth, selectedYear],
+      });
 
       // Manually refetch the saisies to get the updated data
       console.log("Refetching saisies after update...");
@@ -296,7 +350,7 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
 
   // Check for existing saisie and load data
   useEffect(() => {
-    console.log("[DataEntryDialog] Existing saisies effect:", {
+    console.log("[DataEntryDialog] Existing saisies effect triggered:", {
       existingSaisies: existingSaisies?.length,
       existingSaisiesData: existingSaisies?.map((s) => ({
         id: s.id,
@@ -312,10 +366,6 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       saisiesLoading,
       timestamp: new Date().toISOString(),
     });
-
-    // Clear data first to prevent stale data
-    setIndicatorData({});
-    setExistingSaisie(null);
 
     if (
       !isOpen ||
@@ -334,7 +384,10 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
       return;
     }
 
+    console.log("[DataEntryDialog] Processing saisies data...");
+
     if (existingSaisies && existingSaisies.length > 0) {
+      console.log("[DataEntryDialog] Searching for matching saisie...");
       // Find the saisie that matches current site/month/year exactly
       const matchingSaisie = existingSaisies.find(
         (saisie) =>
@@ -370,13 +423,21 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
         setIndicatorData(newIndicatorData);
       } else {
         console.log(
-          "[DataEntryDialog] No matching saisie found, preparing for new entry",
+          "[DataEntryDialog] No matching saisie found, preparing for new entry. Available saisies:",
+          existingSaisies.map((s) => ({
+            id: s.id,
+            site: s.site,
+            mois: s.mois,
+            annee: s.annee,
+          })),
         );
         setExistingSaisie(null);
         setIndicatorData({});
       }
     } else {
-      console.log("[DataEntryDialog] No existing saisies found");
+      console.log(
+        "[DataEntryDialog] No existing saisies found - empty array or null",
+      );
       setExistingSaisie(null);
       setIndicatorData({});
     }
@@ -390,58 +451,52 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
   ]);
 
   // Handle manual date changes (when user changes month/year selectors)
-  // This will trigger a refetch of saisies for the new date
   useEffect(() => {
     if (isOpen && site?.id && isManualDateChange) {
-      // When date changes manually, clear the current data to prepare for new data
-      // The existing saisie detection will reload data if there's a match
       console.log(
-        "[DataEntryDialog] Manual date change detected, clearing form",
+        "[DataEntryDialog] Manual date change detected, clearing form data",
       );
+      // Clear current data when date changes manually
+      // The main data fetching effect will handle loading new data
       setExistingSaisie(null);
       setIndicatorData({});
       setIsManualDateChange(false); // Reset the flag
     }
   }, [selectedMonth, selectedYear, site?.id, isOpen, isManualDateChange]);
 
-  // Reset form when dialog opens
+  // Handle dialog opening - clear form only on initial open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isInitialOpen.current) {
       console.log(
-        "[DataEntryDialog] Dialog opened, checking for existing data",
+        "[DataEntryDialog] Dialog opened for first time - clearing form and setting up",
       );
-      const currentDate = new Date();
 
-      // Set to current date initially (will be overridden if existing saisie is found)
+      // Clear form data on initial open
+      setIndicatorData({});
+      setExistingSaisie(null);
+
+      // Only set to current date on first open if no date is set
       if (!selectedMonth || !selectedYear) {
+        const currentDate = new Date();
         setSelectedMonth(currentDate.getMonth() + 1);
         setSelectedYear(currentDate.getFullYear());
       }
-    }
-  }, [isOpen]);
 
-  // Reset form when site changes (but not when dialog first opens)
-  useEffect(() => {
-    if (isOpen && site?.id) {
-      console.log("[DataEntryDialog] Site effect triggered for site:", site.id);
-      // Only reset if we're actually changing sites, not on initial load
-      // This is handled by the dialog opening/closing cycle
+      isInitialOpen.current = false; // Mark as no longer initial open
     }
-  }, [site?.id, isOpen]); // Separate effect to handle dialog closure cleanup
-  useEffect(() => {
-    if (!isOpen) {
-      // Clear everything when dialog is closed
-      console.log("[DataEntryDialog] Dialog closed, clearing all state");
-      setIndicatorData({});
-      setExistingSaisie(null);
-      setIsManualDateChange(false);
+  }, [isOpen, selectedMonth, selectedYear]);
 
-      // Reset to current date for next time
-      const currentDate = new Date();
-      setSelectedMonth(currentDate.getMonth() + 1);
-      setSelectedYear(currentDate.getFullYear());
+  // Trigger refetch when dialog opens or when month/year changes
+  useEffect(() => {
+    if (isOpen && currentSite?.id && selectedMonth && selectedYear) {
+      console.log("[DataEntryDialog] Requesting refetch for:", {
+        siteId: currentSite.id,
+        month: selectedMonth,
+        year: selectedYear,
+      });
+      handleRefetch();
     }
-  }, [isOpen]);
+  }, [isOpen, currentSite?.id, selectedMonth, selectedYear, handleRefetch]);
   const handleInputChange = (indicatorId: number, value: string) => {
     setIndicatorData((prev) => ({
       ...prev,

@@ -63,8 +63,12 @@ export const useUpdateSaisie = (options: UseUpdateSaisieOptions = {}) => {
       return response.data;
     },
     onSuccess: (data) => {
-      // Invalidate and refetch saisies queries
+      // Invalidate and refetch saisies queries - both general and specific
       queryClient.invalidateQueries({ queryKey: ["saisies"] });
+      queryClient.invalidateQueries({ queryKey: ["saisies", data.site] });
+      queryClient.invalidateQueries({
+        queryKey: ["saisies", data.site, data.mois, data.annee],
+      });
       // Update the specific saisie in cache
       queryClient.setQueryData(["saisie", data.id], data);
     },

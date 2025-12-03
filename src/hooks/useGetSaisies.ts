@@ -58,7 +58,6 @@ export const useGetSaisies = (options: UseGetSaisiesOptions = {}) => {
       );
       return response.data;
     },
-    staleTime: 0, // Always fetch fresh data
     ...queryOptions,
   });
 };

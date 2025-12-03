@@ -68,6 +68,8 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
   const [existingSaisie, setExistingSaisie] = useState<Saisie | null>(null);
   const [isManualDateChange, setIsManualDateChange] = useState(false);
   const isInitialOpen = useRef(true);
+  const previousMonth = useRef<number | null>(null);
+  const previousYear = useRef<number | null>(null);
 
   // Track dialog open/close state changes
   useEffect(() => {
@@ -450,19 +452,13 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
     saisiesLoading,
   ]);
 
-  // Handle manual date changes (when user changes month/year selectors)
+  // Handle manual date changes - let normal data loading handle everything
   useEffect(() => {
-    if (isOpen && site?.id && isManualDateChange) {
-      console.log(
-        "[DataEntryDialog] Manual date change detected, clearing form data",
-      );
-      // Clear current data when date changes manually
-      // The main data fetching effect will handle loading new data
-      setExistingSaisie(null);
-      setIndicatorData({});
-      setIsManualDateChange(false); // Reset the flag
-    }
-  }, [selectedMonth, selectedYear, site?.id, isOpen, isManualDateChange]);
+    // Just update the tracking refs, no need to clear data
+    // The useGetSaisies hook and existing saisie effect will handle the rest
+    previousMonth.current = selectedMonth;
+    previousYear.current = selectedYear;
+  }, [selectedMonth, selectedYear]);
 
   // Handle dialog opening - clear form only on initial open
   useEffect(() => {
@@ -663,7 +659,6 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
                 id="month-select"
                 value={selectedMonth}
                 onChange={(e) => {
-                  setIsManualDateChange(true);
                   setSelectedMonth(Number(e.target.value));
                 }}
               >
@@ -680,7 +675,6 @@ export const DataEntryDialog: React.FC<DataEntryDialogProps> = ({
                 id="year-select"
                 value={selectedYear}
                 onChange={(e) => {
-                  setIsManualDateChange(true);
                   setSelectedYear(Number(e.target.value));
                 }}
               >
